@@ -1,0 +1,358 @@
+<!doctype html>
+<html lang="id">
+	<head>
+		<meta charset="utf-8" />
+		<meta name="viewport" content="width=device-width, initial-scale=1" />
+		<title>Layar Guru - Branch Battle</title>
+		<link rel="stylesheet" href="/css/app.css" />
+	</head>
+	<body>
+		<div class="wrap">
+			<div class="row between mb-8">
+				<div class="row gap-4">
+					<strong class="card-title">Branch Battle</strong>
+					<span class="pill">Layar guru</span>
+				</div>
+				<div class="row gap-3">
+					<span class="dot" id="dot"></span>
+					<span class="muted text-small" id="status">menyambung...</span>
+				</div>
+			</div>
+
+			<!-- ============================ LOBBY ============================ -->
+			<section id="lobby" class="lobby-grid">
+				<div class="stack">
+					<div class="card stack">
+						<span class="label m-0">Kode room</span>
+						<div class="code-display" id="code">....</div>
+						<div class="stack gap-2">
+							<span class="label m-0">Buka di HP siswa (satu WiFi)</span>
+							<div id="urls" class="stack gap-2"></div>
+						</div>
+					</div>
+
+					<div class="card stack">
+						<h2 class="card-title">Pengaturan</h2>
+						<label class="toggle">
+							<input type="checkbox" id="optTeam" />
+							<span>Mode tim (Tim A vs Tim B)</span>
+						</label>
+						<label class="toggle">
+							<input type="checkbox" id="optShuffle" checked />
+							<span>Acak urutan soal</span>
+						</label>
+						<div>
+							<span class="label">Jumlah soal</span>
+							<input
+								class="input"
+								id="optCount"
+								type="number"
+								min="1"
+								value="10"
+							/>
+						</div>
+						<div>
+							<span class="label">Jenis kartu (pilih minimal satu)</span>
+							<div class="chips" id="typeChips"></div>
+						</div>
+						<button class="btn btn-primary btn-block" id="start" disabled>
+							Mulai kuis
+						</button>
+					</div>
+				</div>
+
+				<div class="card stack">
+					<div class="row between">
+						<h2 class="card-title">Peserta</h2>
+						<span class="pill pill-blue" id="count">0</span>
+					</div>
+					<div class="lb" id="roster">
+						<p class="muted m-0 text-small">Menunggu siswa bergabung...</p>
+					</div>
+				</div>
+			</section>
+
+			<!-- ============================ GAME ============================= -->
+			<section id="game" class="hidden">
+				<div class="row between mb-6">
+					<div class="row gap-3">
+						<span class="pill pill-orange" id="gType">-</span>
+						<span class="pill" id="gPos">-</span>
+					</div>
+					<span class="pill pill-green" id="gAnswered">0 dari 0 menjawab</span>
+				</div>
+				<div class="timer mb-7" id="gTimer"><i></i></div>
+
+				<div id="gameGrid" class="game-grid">
+					<div class="flip" id="gFlip">
+						<div class="flip-inner" id="gInner">
+							<div class="flip-face stack" id="gFront">
+								<h2 id="gPrompt" class="text-2xl">-</h2>
+								<pre class="codebox" id="gCode"></pre>
+								<div class="opts" id="gOpts"></div>
+							</div>
+							<div class="flip-face flip-back stack" id="gBack">
+								<span class="pill pill-green">Jawaban</span>
+								<div id="gBackGrid" class="reveal-grid">
+									<div class="stack gap-4">
+										<span class="label m-0">Soal tadi</span>
+										<h3 id="gBackPrompt" class="font-semibold">-</h3>
+										<pre class="codebox codebox-compact" id="gBackCode"></pre>
+									</div>
+									<div class="stack gap-5">
+										<h2 id="gAnswer" class="text-2xl">-</h2>
+										<p id="gWhy" class="muted m-0">-</p>
+										<div class="stack gap-3" id="gStats"></div>
+									</div>
+								</div>
+							</div>
+						</div>
+					</div>
+
+					<div class="stack">
+						<div id="gTeams"></div>
+						<div class="card stack">
+							<h2 class="card-title">Papan skor</h2>
+							<div class="lb" id="gBoard"></div>
+						</div>
+						<button class="btn btn-primary btn-block" id="btnReveal">
+							<span>Buka jawaban</span>
+							<span class="muted">(Spasi)</span>
+						</button>
+						<button class="btn btn-block hidden" id="btnNext">
+							<span id="btnNextLabel">Kartu berikutnya</span>
+							<span class="muted">(Enter)</span>
+						</button>
+					</div>
+				</div>
+			</section>
+
+			<!-- ============================= END ============================== -->
+			<section id="end" class="hidden">
+				<div class="stack max-w-sm mx-auto">
+					<div class="stack gap-2 text-center">
+						<span class="pill pill-green mx-auto">Selesai</span>
+						<h1 class="page-title">Hasil akhir</h1>
+					</div>
+					<div id="eTeams"></div>
+					<div class="card">
+						<div class="lb" id="eBoard"></div>
+					</div>
+					<button class="btn btn-primary btn-block" id="btnAgain">
+						Main lagi (skor direset)
+					</button>
+				</div>
+			</section>
+		</div>
+
+		<script type="module">
+			import {
+				connect,
+				el,
+				highlight,
+				escapeHtml,
+				LETTERS,
+				startTimer,
+				optionButtonsHtml,
+				leaderboardRowsHtml,
+				teamsSummaryHtml,
+			} from '/js/common.js'
+
+			// Catatan refactor: dulu ada mq/COLS/applyStack (window.matchMedia) untuk
+			// mengganti grid-template-columns lewat JS, dan fitCard()/ResizeObserver
+			// untuk menyamakan tinggi kartu depan-belakang. Semuanya dihapus - grid
+			// responsif dan tinggi kartu sekarang murni CSS (lihat .game-grid,
+			// .reveal-grid, dan .flip-inner di app.css). Ini juga yang memperbaiki
+			// keluhan "blok kode di jawaban kepotong/ketinggian di HP": fitCard()
+			// lama sempat mengukur tinggi SAAT animasi rotateY 600ms masih berjalan,
+			// jadi hasil ukurannya salah.
+
+			let stopTimer = null
+			let current = null
+
+			const TYPES = [
+				['predict-output', 'Tebak Output'],
+				['trace-path', 'Telusuri Cabang'],
+				['fix-bug', 'Cari Bug'],
+				['pairing', 'Pasangkan'],
+			]
+			const picked = new Set(TYPES.map((t) => t[0]))
+
+			el('typeChips').innerHTML = TYPES.map(
+				([id, label]) =>
+					'<button class="chip a" data-type="' + id + '">' + label + '</button>',
+			).join('')
+
+			el('typeChips').addEventListener('click', (e) => {
+				const b = e.target.closest('[data-type]')
+				if (!b) return
+				const id = b.dataset.type
+				if (picked.has(id) && picked.size > 1) picked.delete(id)
+				else picked.add(id)
+				b.classList.toggle('a', picked.has(id))
+				pushOptions()
+			})
+
+			const sock = connect({
+				onMessage: onMessage,
+				onStatus: (s) => {
+					el('dot').className =
+						'dot ' + (s === 'online' ? 'on' : s === 'offline' ? 'off' : '')
+					el('status').textContent =
+						s === 'online'
+							? 'tersambung'
+							: s === 'offline'
+								? 'terputus - menyambung ulang'
+								: 'menyambung...'
+					if (s === 'online') {
+						const saved = sessionStorage.getItem('bb_host_code')
+						if (saved) sock.send({ t: 'host:resume', code: saved })
+						else sock.send({ t: 'host:create', options: readOptions() })
+					}
+				},
+			})
+
+			function readOptions() {
+				return {
+					teamMode: el('optTeam').checked,
+					shuffle: el('optShuffle').checked,
+					count: Number(el('optCount').value) || 10,
+					types: [...picked],
+				}
+			}
+			function pushOptions() {
+				sock.send({ t: 'host:options', options: readOptions() })
+			}
+
+			for (const id of ['optTeam', 'optShuffle', 'optCount'])
+				el(id).addEventListener('change', pushOptions)
+
+			el('start').onclick = () => {
+				pushOptions()
+				sock.send({ t: 'host:start' })
+			}
+			el('btnReveal').onclick = () => sock.send({ t: 'host:reveal' })
+			el('btnNext').onclick = () => sock.send({ t: 'host:next' })
+			el('btnAgain').onclick = () => sock.send({ t: 'host:restart' })
+
+			document.addEventListener('keydown', (e) => {
+				if (el('game').classList.contains('hidden')) return
+				if (e.code === 'Space') {
+					e.preventDefault()
+					if (!el('btnReveal').classList.contains('hidden')) el('btnReveal').click()
+				} else if (e.code === 'Enter') {
+					e.preventDefault()
+					if (!el('btnNext').classList.contains('hidden')) el('btnNext').click()
+				}
+			})
+
+			function show(which) {
+				for (const id of ['lobby', 'game', 'end'])
+					el(id).classList.toggle('hidden', id !== which)
+			}
+
+			function renderTeams(node, teams) {
+				node.innerHTML = teamsSummaryHtml(teams)
+			}
+
+			function onMessage(m) {
+				if (m.t === 'room') {
+					sessionStorage.setItem('bb_host_code', m.code)
+					el('code').textContent = m.code
+					el('optCount').max = m.available
+					el('urls').innerHTML = m.joinUrls.length
+						? m.joinUrls
+								.map(
+									(u) =>
+										'<code class="join-url">http://' + escapeHtml(u) + '</code>',
+								)
+								.join('')
+						: '<span class="muted text-small">Alamat LAN tidak terdeteksi.</span>'
+				} else if (m.t === 'error') {
+					sessionStorage.removeItem('bb_host_code')
+					sock.send({ t: 'host:create', options: readOptions() })
+				} else if (m.t === 'roster') {
+					el('count').textContent = m.players.length
+					el('start').disabled = m.players.length === 0
+					el('roster').innerHTML = leaderboardRowsHtml(m.players, { showTeam: true })
+					el('gBoard').innerHTML = leaderboardRowsHtml(m.players.slice(0, 8), {
+						showTeam: true,
+					})
+					if (m.phase === 'lobby') show('lobby')
+				} else if (m.t === 'lobby') {
+					show('lobby')
+				} else if (m.t === 'card') {
+					current = m
+					show('game')
+					el('gFlip').classList.remove('is-flipped')
+					el('gType').textContent = m.typeLabel
+					el('gPos').textContent = 'Kartu ' + (m.index + 1) + ' / ' + m.total
+					el('gPrompt').textContent = m.prompt
+					el('gCode').innerHTML = highlight(m.code)
+					el('gOpts').innerHTML = optionButtonsHtml(m.options)
+					el('btnReveal').classList.remove('hidden')
+					el('btnNext').classList.add('hidden')
+
+					stopTimer?.()
+					stopTimer = startTimer(m.timeLimit, {
+						onTick: (left, frac) => {
+							const t = el('gTimer')
+							t.firstElementChild.style.width = frac * 100 + '%'
+							t.className =
+								'timer' + (frac < 0.2 ? ' danger' : frac < 0.5 ? ' warn' : '')
+						},
+					})
+				} else if (m.t === 'progress') {
+					el('gAnswered').textContent =
+						m.answered + ' dari ' + m.total + ' menjawab'
+				} else if (m.t === 'reveal') {
+					stopTimer?.()
+					el('gFlip').classList.add('is-flipped')
+					el('gAnswer').textContent =
+						LETTERS[m.answer] + '. ' + current.options[m.answer]
+					el('gWhy').textContent = m.explanation
+					el('gBackPrompt').textContent = current.prompt
+					el('gBackCode').innerHTML = highlight(current.code)
+
+					const total = Math.max(1, m.responders)
+					el('gStats').innerHTML = current.options
+						.map((o, i) => {
+							const pct = Math.round((m.stats[i] / total) * 100)
+							const okOpt = i === m.answer
+							return (
+								'<div><div class="vote-row">' +
+								'<span>' +
+								LETTERS[i] +
+								'. ' +
+								escapeHtml(o) +
+								'</span><strong>' +
+								m.stats[i] +
+								' (' +
+								pct +
+								'%)</strong></div>' +
+								'<div class="timer vote-bar"><i style="width:' +
+								pct +
+								'%;background:' +
+								(okOpt ? 'var(--green)' : 'var(--surface2)') +
+								'"></i></div></div>'
+							)
+						})
+						.join('')
+
+					el('gBoard').innerHTML = leaderboardRowsHtml(m.leaderboard, { showTeam: true })
+					renderTeams(el('gTeams'), m.teams)
+					el('btnReveal').classList.add('hidden')
+					el('btnNext').classList.remove('hidden')
+					el('btnNextLabel').textContent = m.isLast
+						? 'Lihat hasil akhir'
+						: 'Kartu berikutnya'
+				} else if (m.t === 'end') {
+					stopTimer?.()
+					show('end')
+					el('eBoard').innerHTML = leaderboardRowsHtml(m.leaderboard, { showTeam: true })
+					renderTeams(el('eTeams'), m.teams)
+				}
+			}
+		</script>
+	</body>
+</html>

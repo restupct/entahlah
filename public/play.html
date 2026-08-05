@@ -1,0 +1,322 @@
+<!doctype html>
+<html lang="id">
+	<head>
+		<meta charset="utf-8" />
+		<meta name="viewport" content="width=device-width, initial-scale=1" />
+		<title>Main - Branch Battle</title>
+		<link rel="stylesheet" href="/css/app.css" />
+	</head>
+	<body>
+		<div class="wrap wrap-narrow">
+			<!-- ============================ JOIN ============================= -->
+			<section id="join" class="stack">
+				<div class="stack gap-2">
+					<span class="pill pill-blue">Branch Battle</span>
+					<h1 class="page-title">Gabung room</h1>
+				</div>
+				<div class="card stack">
+					<div>
+						<span class="label">Kode room</span>
+						<input
+							class="input code-input"
+							id="fCode"
+							maxlength="4"
+							autocomplete="off"
+							placeholder="ABCD"
+						/>
+					</div>
+					<div>
+						<span class="label">Nama kamu</span>
+						<input
+							class="input"
+							id="fName"
+							maxlength="20"
+							autocomplete="off"
+							placeholder="Contoh: Sinta"
+						/>
+					</div>
+					<div id="jErr" class="banner banner-red hidden"></div>
+					<button class="btn btn-primary btn-block" id="btnJoin">Masuk</button>
+				</div>
+			</section>
+
+			<!-- ============================ WAIT ============================= -->
+			<section id="wait" class="hidden stack text-center">
+				<div class="card stack">
+					<span class="pill pill-green mx-auto">Sudah masuk</span>
+					<h1 class="page-title" id="wName">-</h1>
+					<p class="muted m-0">
+						Tunggu guru memulai kuis. Jangan tutup halaman ini.
+					</p>
+				</div>
+			</section>
+
+			<!-- ============================ GAME ============================= -->
+			<section id="game" class="hidden">
+				<div class="row between mb-5">
+					<span class="pill pill-orange" id="pType">-</span>
+					<div class="row gap-3">
+						<span class="pill" id="pPos">-</span>
+						<span class="pill pill-blue" id="pScore">0</span>
+					</div>
+				</div>
+				<div class="timer mb-6" id="pTimer"><i></i></div>
+
+				<div class="flip" id="pFlip">
+					<div class="flip-inner" id="pInner">
+						<div class="flip-face stack" id="pFront">
+							<h2 id="pPrompt" class="text-lg">-</h2>
+							<pre class="codebox" id="pCode"></pre>
+							<div class="opts" id="pOpts"></div>
+							<p id="pHint" class="muted hint text-center">
+								Makin cepat menjawab, makin besar poinnya.
+							</p>
+						</div>
+						<div class="flip-face flip-back stack" id="pBack">
+							<div class="stack gap-3 text-center">
+								<div id="pMark" class="result-mark">-</div>
+								<h2 id="pVerdict" class="text-xl">-</h2>
+								<div class="lb-score text-2xl" id="pPoints">+0</div>
+								<div class="row justify-center gap-3">
+									<span class="pill" id="pRank">-</span>
+									<span class="pill" id="pStreak">-</span>
+								</div>
+							</div>
+							<hr class="divider" />
+							<span class="label m-0">Soal tadi</span>
+							<h3 id="pBackPrompt" class="text-caption font-semibold">-</h3>
+							<pre class="codebox" id="pBackCode"></pre>
+							<div class="banner banner-green" id="pKey">-</div>
+							<p id="pWhy" class="muted m-0 text-small">-</p>
+						</div>
+					</div>
+				</div>
+
+				<div class="row gap-3 mt-6">
+					<span class="dot" id="dot"></span>
+					<span class="muted text-caption" id="status">-</span>
+				</div>
+			</section>
+
+			<!-- ============================= END ============================== -->
+			<section id="end" class="hidden stack">
+				<div class="stack gap-2 text-center">
+					<span class="pill pill-green mx-auto">Selesai</span>
+					<h1 class="page-title">Hasil akhir</h1>
+				</div>
+				<div class="card stack" id="eMine"></div>
+				<div class="card"><div class="lb" id="eBoard"></div></div>
+			</section>
+		</div>
+
+		<script type="module">
+			import {
+				connect,
+				el,
+				highlight,
+				escapeHtml,
+				LETTERS,
+				startTimer,
+				optionButtonsHtml,
+				leaderboardRowsHtml,
+			} from '/js/common.js'
+
+			let joined = false
+			let stopTimer = null
+			let current = null
+			let myPid = localStorage.getItem('bb_pid') || null
+
+			el('fCode').value = localStorage.getItem('bb_code') || ''
+			el('fName').value = localStorage.getItem('bb_name') || ''
+
+			// Catatan refactor: fitCard()/ResizeObserver lama dihapus. Tinggi kartu
+			// depan/belakang sekarang murni CSS Grid (lihat .flip-inner di
+			// app.css) sehingga tidak lagi salah ukur saat animasi flip 600ms masih
+			// berjalan - itulah penyebab blok kode di sisi jawaban kepotong/terlalu
+			// tinggi di HP walau tampak normal di layar besar.
+
+			const sock = connect({
+				onMessage: onMessage,
+				onStatus: (s) => {
+					el('dot').className =
+						'dot ' + (s === 'online' ? 'on' : s === 'offline' ? 'off' : '')
+					el('status').textContent =
+						s === 'online'
+							? 'tersambung'
+							: s === 'offline'
+								? 'terputus - menyambung ulang'
+								: 'menyambung...'
+					if (s === 'online' && joined) doJoin()
+				},
+			})
+
+			function doJoin() {
+				sock.send({
+					t: 'player:join',
+					code: el('fCode').value.trim().toUpperCase(),
+					name: el('fName').value.trim(),
+					pid: myPid || undefined,
+				})
+			}
+
+			el('btnJoin').onclick = () => {
+				const code = el('fCode').value.trim().toUpperCase()
+				const name = el('fName').value.trim()
+				if (code.length !== 4 || !name) {
+					showErr('Isi kode room (4 huruf) dan nama kamu.')
+					return
+				}
+				if (localStorage.getItem('bb_code') !== code) myPid = null
+				doJoin()
+			}
+			el('fCode').addEventListener('keydown', (e) => {
+				if (e.key === 'Enter') el('fName').focus()
+			})
+			el('fName').addEventListener('keydown', (e) => {
+				if (e.key === 'Enter') el('btnJoin').click()
+			})
+
+			function showErr(msg) {
+				el('jErr').textContent = msg
+				el('jErr').classList.remove('hidden')
+			}
+
+			function show(which) {
+				for (const id of ['join', 'wait', 'game', 'end'])
+					el(id).classList.toggle('hidden', id !== which)
+			}
+
+			function pick(i) {
+				if (!current || current.locked) return
+				current.locked = true
+				sock.send({ t: 'player:answer', choice: i })
+				for (const b of el('pOpts').children) {
+					b.disabled = true
+					b.classList.toggle('is-picked', Number(b.dataset.i) === i)
+				}
+				el('pHint').textContent = 'Jawaban terkirim. Tunggu peserta lain...'
+			}
+
+			document.addEventListener('keydown', (e) => {
+				if (el('game').classList.contains('hidden') || !current) return
+				const k = e.key.toUpperCase()
+				const byLetter = LETTERS.indexOf(k)
+				const byNum = /^[1-9]$/.test(k) ? Number(k) - 1 : -1
+				const i = byLetter >= 0 ? byLetter : byNum
+				if (i >= 0 && i < current.options.length) pick(i)
+			})
+
+			function onMessage(m) {
+				if (m.t === 'error') {
+					if (!joined) {
+						show('join')
+						showErr(m.message)
+					}
+				} else if (m.t === 'joined') {
+					joined = true
+					myPid = m.pid
+					localStorage.setItem('bb_pid', m.pid)
+					localStorage.setItem('bb_code', m.code)
+					localStorage.setItem('bb_name', m.name)
+					el('pScore').textContent = m.score
+					el('wName').textContent = m.name + (m.team ? ' - Tim ' + m.team : '')
+					if (m.phase === 'lobby' || m.phase === 'reveal') show('wait')
+				} else if (m.t === 'lobby') {
+					show('wait')
+				} else if (m.t === 'card') {
+					current = Object.assign({}, m, { locked: false })
+					show('game')
+					el('pFlip').classList.remove('is-flipped')
+					el('pType').textContent = m.typeLabel
+					el('pPos').textContent = m.index + 1 + ' / ' + m.total
+					el('pPrompt').textContent = m.prompt
+					el('pCode').innerHTML = highlight(m.code)
+					el('pHint').textContent = 'Makin cepat menjawab, makin besar poinnya.'
+					el('pOpts').innerHTML = optionButtonsHtml(m.options, {
+						tag: 'button',
+						selectable: true,
+					})
+					for (const b of el('pOpts').children)
+						b.onclick = () => pick(Number(b.dataset.i))
+
+					stopTimer?.()
+					stopTimer = startTimer(m.timeLimit, {
+						onTick: (left, frac) => {
+							const t = el('pTimer')
+							t.firstElementChild.style.width = frac * 100 + '%'
+							t.className =
+								'timer' + (frac < 0.2 ? ' danger' : frac < 0.5 ? ' warn' : '')
+						},
+						onDone: () => {
+							if (current && !current.locked) {
+								current.locked = true
+								for (const b of el('pOpts').children) b.disabled = true
+								el('pHint').textContent = 'Waktu habis.'
+							}
+						},
+					})
+				} else if (m.t === 'ack') {
+					if (current) current.locked = true
+					for (const b of el('pOpts').children) {
+						b.disabled = true
+						b.classList.toggle('is-picked', Number(b.dataset.i) === m.choice)
+					}
+				} else if (m.t === 'result') {
+					stopTimer?.()
+					el('pFlip').classList.add('is-flipped')
+					el('pScore').textContent = m.score
+					if (current) {
+						el('pBackPrompt').textContent = current.prompt
+						el('pBackCode').innerHTML = highlight(current.code)
+						el('pKey').textContent =
+							'Jawaban benar: ' +
+							LETTERS[m.answer] +
+							'. ' +
+							current.options[m.answer]
+						el('pWhy').textContent = m.explanation || ''
+					}
+					el('pMark').textContent = !m.answered
+						? '\u23F1'
+						: m.correct
+							? '\u2713'
+							: '\u2715'
+					el('pMark').style.color = !m.answered
+						? 'var(--muted)'
+						: m.correct
+							? 'var(--green)'
+							: 'var(--red)'
+					el('pVerdict').textContent = !m.answered
+						? 'Tidak sempat menjawab'
+						: m.correct
+							? 'Benar!'
+							: 'Belum tepat'
+					el('pPoints').textContent = '+' + m.points
+					el('pRank').textContent = 'Peringkat ' + (m.rank || '-') + ' dari ' + m.of
+					el('pStreak').textContent =
+						m.streak > 1 ? m.streak + ' benar beruntun' : 'Total ' + m.score
+				} else if (m.t === 'end') {
+					stopTimer?.()
+					show('end')
+					const me = m.leaderboard.find((p) => p.pid === myPid)
+					el('eMine').innerHTML = me
+						? '<div class="text-center">' +
+							'<div class="label">Peringkat kamu</div>' +
+							'<div class="code-display code-display--compact">#' +
+							me.rank +
+							'</div>' +
+							'<div class="muted">' +
+							me.score +
+							' poin &middot; ' +
+							me.correct +
+							' dari ' +
+							m.total +
+							' benar</div></div>'
+						: ''
+					el('eBoard').innerHTML = leaderboardRowsHtml(m.leaderboard, {
+						highlightPid: myPid,
+					})
+				}
+			}
+		</script>
+	</body>
+</html>

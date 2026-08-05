@@ -1,0 +1,203 @@
+<!doctype html>
+<html lang="id">
+	<head>
+		<meta charset="utf-8" />
+		<meta name="viewport" content="width=device-width, initial-scale=1" />
+		<title>Memory Match - Branch Battle</title>
+		<link rel="stylesheet" href="/css/app.css" />
+		<style>
+			#grid {
+				display: grid;
+				grid-template-columns: repeat(4, 1fr);
+				gap: 12px;
+			}
+			.tile {
+				perspective: 900px;
+				cursor: pointer;
+			}
+			.tile-in {
+				position: relative;
+				height: 118px;
+				transition: transform 0.45s cubic-bezier(0.4, 0, 0.2, 1);
+				transform-style: preserve-3d;
+			}
+			.tile.up .tile-in,
+			.tile.done .tile-in {
+				transform: rotateY(180deg);
+			}
+			.face {
+				position: absolute;
+				inset: 0;
+				display: grid;
+				place-items: center;
+				padding: 10px;
+				text-align: center;
+				border-radius: var(--radius);
+				backface-visibility: hidden;
+				-webkit-backface-visibility: hidden;
+				overflow: hidden;
+			}
+			.back {
+				background: var(--surface2);
+				border: 1px solid var(--border);
+				color: var(--muted);
+				font-family: var(--mono);
+				font-size: 22px;
+			}
+			.front {
+				transform: rotateY(180deg);
+				background: #202020;
+				color: #f4f3f1;
+				font-family: var(--mono);
+				font-size: 14px;
+				line-height: 1.4;
+				word-break: break-word;
+			}
+			.front.meaning {
+				background: var(--blue-soft);
+				color: #1b5f9e;
+				font-family: var(--sans);
+				font-size: 15px;
+				font-weight: 550;
+			}
+			.tile.done {
+				opacity: 0.45;
+				cursor: default;
+			}
+			@media (max-width: 640px) {
+				#grid {
+					grid-template-columns: repeat(3, 1fr);
+					gap: 10px;
+				}
+				.tile-in {
+					height: 104px;
+				}
+			}
+		</style>
+	</head>
+	<body>
+		<div class="wrap max-w-md">
+			<div class="stack">
+				<div class="row between">
+					<div>
+						<span class="pill pill-blue">Latihan mandiri</span>
+						<h1 class="page-title mt-3">Memory Match</h1>
+						<p class="muted hint">Pasangkan potongan kondisi dengan artinya.</p>
+					</div>
+					<a class="btn" href="/">Kembali</a>
+				</div>
+
+				<div class="row gap-3">
+					<span class="pill pill-green" id="mPairs">0 / 6 pasangan</span>
+					<span class="pill" id="mMoves">0 langkah</span>
+					<button class="btn ml-auto" id="mReset">Acak ulang</button>
+				</div>
+
+				<div id="mWin" class="banner banner-green hidden"></div>
+				<div id="grid"></div>
+			</div>
+		</div>
+
+		<script type="module">
+			import { el, escapeHtml } from '/js/common.js'
+
+			const PAIRS = [
+				['x % 2 === 0', 'Bilangan genap'],
+				['n > 0 && n < 100', 'Antara 1 sampai 99'],
+				["nama === ''", 'String kosong'],
+				['a === b', 'Sama nilai & tipe'],
+				['!isLogin', 'Belum login'],
+				['nilai ?? 0', 'Pakai 0 jika null'],
+				['x !== y', 'Tidak sama'],
+				['usia >= 17', 'Minimal 17 tahun'],
+			]
+			const total = 6
+
+			let first = null
+			let lock = false
+			let found = 0
+			let moves = 0
+
+			const shuffle = (a) => a.slice().sort(() => Math.random() - 0.5)
+
+			function build() {
+				first = null
+				lock = false
+				found = 0
+				moves = 0
+				el('mWin').classList.add('hidden')
+				update()
+
+				const chosen = shuffle(PAIRS).slice(0, total)
+				const cards = []
+				chosen.forEach(([code, meaning], i) => {
+					cards.push({ pair: i, text: code, kind: 'code' })
+					cards.push({ pair: i, text: meaning, kind: 'meaning' })
+				})
+
+				el('grid').innerHTML = shuffle(cards)
+					.map(
+						(c) =>
+							'<div class="tile" data-pair="' +
+							c.pair +
+							'"><div class="tile-in">' +
+							'<div class="face back">?</div>' +
+							'<div class="face front' +
+							(c.kind === 'meaning' ? ' meaning' : '') +
+							'">' +
+							escapeHtml(c.text) +
+							'</div></div></div>',
+					)
+					.join('')
+			}
+
+			function update() {
+				el('mPairs').textContent = found + ' / ' + total + ' pasangan'
+				el('mMoves').textContent = moves + ' langkah'
+			}
+
+			el('grid').addEventListener('click', (e) => {
+				const tile = e.target.closest('.tile')
+				if (!tile || lock) return
+				if (tile.classList.contains('done') || tile.classList.contains('up'))
+					return
+
+				tile.classList.add('up')
+				if (!first) {
+					first = tile
+					return
+				}
+
+				moves++
+				update()
+
+				if (first.dataset.pair === tile.dataset.pair) {
+					first.classList.add('done')
+					tile.classList.add('done')
+					first = null
+					found++
+					update()
+					if (found === total) {
+						const w = el('mWin')
+						w.textContent =
+							'Selesai! Semua pasangan ketemu dalam ' + moves + ' langkah.'
+						w.classList.remove('hidden')
+					}
+					return
+				}
+
+				lock = true
+				const a = first
+				first = null
+				setTimeout(() => {
+					a.classList.remove('up')
+					tile.classList.remove('up')
+					lock = false
+				}, 850)
+			})
+
+			el('mReset').onclick = build
+			build()
+		</script>
+	</body>
+</html>

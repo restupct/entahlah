@@ -1,0 +1,596 @@
+:root {
+	--text: #2c2c2b;
+	--muted: #7d7a75;
+	--canvas: #ffffff;
+	--soft: #f9f8f7;
+	--surface2: #f0efed;
+	--border: #e6e5e3;
+	--blue: #2783de;
+	--blue-soft: #e5f2fc;
+	--green: #46a171;
+	--green-soft: #e8f1ec;
+	--orange: #d5803b;
+	--orange-soft: #fbebde;
+	--red: #e56458;
+	--red-soft: #fce9e7;
+	--radius: 8px;
+	--radius-lg: 12px;
+	--shadow: 0 1px 2px rgba(0, 0, 0, 0.05), 0 4px 12px rgba(0, 0, 0, 0.04);
+	--mono: Menlo, Consolas, "Liberation Mono", monospace;
+	--sans: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial,
+		sans-serif;
+
+	/* Skala tipografi & spasi terpusat - dulu setiap halaman punya angka
+	   font-size/gap sendiri lewat style="..." inline, sekarang satu sumber. */
+	--fs-tiny: 13px;
+	--fs-small: 14px;
+	--fs-caption: 15px;
+	--fs-md: 17px;
+	--fs-card-title: 18px;
+	--fs-lg: 19px;
+	--fs-xl: 22px;
+	--fs-2xl: 24px;
+	--fs-page-title: 28px;
+	--fs-page-title-lg: 34px;
+
+	--space-1: 4px;
+	--space-2: 6px;
+	--space-3: 8px;
+	--space-4: 10px;
+	--space-5: 12px;
+	--space-6: 16px;
+	--space-7: 20px;
+	--space-8: 24px;
+	--space-9: 32px;
+}
+
+* {
+	box-sizing: border-box;
+}
+
+html,
+body {
+	margin: 0;
+	padding: 0;
+}
+
+body {
+	font-family: var(--sans);
+	font-size: 16px;
+	line-height: 1.5;
+	color: var(--text);
+	background: var(--soft);
+	-webkit-text-size-adjust: 100%;
+}
+
+h1,
+h2,
+h3 {
+	margin: 0;
+	line-height: 1.25;
+	font-weight: 650;
+	letter-spacing: -0.01em;
+}
+
+button,
+input,
+select {
+	font: inherit;
+	color: inherit;
+}
+
+:focus-visible {
+	outline: 2px solid var(--blue);
+	outline-offset: 2px;
+}
+
+.wrap {
+	max-width: 1120px;
+	margin: 0 auto;
+	padding: 32px 24px 64px;
+}
+
+.wrap-narrow {
+	max-width: 560px;
+}
+
+.hidden {
+	display: none !important;
+}
+
+.card {
+	background: var(--canvas);
+	border: 1px solid var(--border);
+	border-radius: var(--radius-lg);
+	padding: 24px;
+}
+
+.btn {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	gap: 8px;
+	min-height: 44px;
+	padding: 10px 20px;
+	border: 1px solid var(--border);
+	border-radius: var(--radius);
+	background: var(--canvas);
+	color: var(--text);
+	font-weight: 550;
+	text-decoration: none;
+	cursor: pointer;
+	transition: background 0.15s ease, border-color 0.15s ease;
+}
+
+.btn:hover:not(:disabled) {
+	background: var(--surface2);
+}
+
+.btn-primary {
+	background: var(--blue);
+	border-color: var(--blue);
+	color: #fff;
+}
+
+.btn-primary:hover:not(:disabled) {
+	background: #1f6fbe;
+}
+
+.btn:disabled {
+	opacity: 0.45;
+	cursor: not-allowed;
+}
+
+.btn-block {
+	width: 100%;
+}
+
+.input {
+	width: 100%;
+	min-height: 44px;
+	padding: 10px 14px;
+	border: 1px solid var(--border);
+	border-radius: var(--radius);
+	background: var(--canvas);
+}
+
+.input:focus {
+	border-color: var(--blue);
+	outline: none;
+	box-shadow: 0 0 0 3px var(--blue-soft);
+}
+
+.label {
+	display: block;
+	font-size: 14px;
+	font-weight: 550;
+	color: var(--muted);
+	margin-bottom: 8px;
+}
+
+.pill {
+	display: inline-flex;
+	align-items: center;
+	align-self: flex-start;
+	gap: 6px;
+	padding: 4px 12px;
+	border-radius: 999px;
+	font-size: 13px;
+	font-weight: 600;
+	background: var(--surface2);
+	color: var(--muted);
+}
+
+.pill-blue {
+	background: var(--blue-soft);
+	color: #1b5f9e;
+}
+.pill-green {
+	background: var(--green-soft);
+	color: #2f7150;
+}
+.pill-orange {
+	background: var(--orange-soft);
+	color: #9a5a24;
+}
+
+.muted {
+	color: var(--muted);
+}
+
+.stack {
+	display: flex;
+	flex-direction: column;
+	gap: 16px;
+}
+
+.row {
+	display: flex;
+	align-items: center;
+	gap: 12px;
+	flex-wrap: wrap;
+}
+
+.between {
+	justify-content: space-between;
+}
+
+code,
+pre {
+	font-family: var(--mono);
+}
+
+.codebox {
+	margin: 0;
+	padding: 20px 24px;
+	background: #202020;
+	color: #f4f3f1;
+	border-radius: var(--radius);
+	font-family: var(--mono);
+	font-size: clamp(14px, 2.4vw, 20px);
+	line-height: 1.6;
+	overflow-x: auto;
+	tab-size: 2;
+	white-space: pre;
+}
+
+.codebox .k {
+	color: #a5c9ff;
+}
+.codebox .s {
+	color: #9fdcb4;
+}
+.codebox .n {
+	color: #ffd79a;
+}
+.codebox .c {
+	color: #8f8d89;
+}
+
+.flip {
+	perspective: 1600px;
+}
+
+/*
+ * Dulu .flip-back di-posisikan absolute + overflow:auto, dan tingginya
+ * disamakan lewat JS (fitCard() baca getBoundingClientRect() lalu di-set
+ * sebagai inline min-height). Masalahnya, fitCard() sempat dipanggil SAAT
+ * transisi rotateY 600ms masih berjalan, jadi tinggi yang terukur salah -
+ * hasilnya blok kode di sisi jawaban kepotong / tampak sangat tinggi
+ * terutama di HP.
+ *
+ * Perbaikannya murni CSS: kedua sisi kartu ditumpuk di grid-area yang sama,
+ * sehingga wrapper otomatis mengikuti sisi yang paling tinggi (soal atau
+ * jawaban) tanpa JS dan tanpa peduli posisi animasi transform.
+ */
+.flip-inner {
+	position: relative;
+	display: grid;
+	grid-template-areas: 'card';
+	min-height: 300px;
+	transition: transform 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+	transform-style: preserve-3d;
+}
+
+.flip.is-flipped .flip-inner {
+	transform: rotateY(180deg);
+}
+
+.flip-face {
+	grid-area: card;
+	min-width: 0;
+	backface-visibility: hidden;
+	-webkit-backface-visibility: hidden;
+	background: var(--canvas);
+	border: 1px solid var(--border);
+	border-radius: var(--radius-lg);
+	padding: 24px;
+	box-shadow: var(--shadow);
+}
+
+.flip-back {
+	transform: rotateY(180deg);
+}
+
+@media (prefers-reduced-motion: reduce) {
+	.flip-inner {
+		transition: none;
+	}
+}
+
+.opts {
+	display: grid;
+	grid-template-columns: repeat(2, 1fr);
+	gap: 12px;
+}
+
+.opt {
+	display: flex;
+	align-items: center;
+	gap: 12px;
+	min-height: 60px;
+	padding: 14px 16px;
+	text-align: left;
+	border: 1px solid var(--border);
+	border-radius: var(--radius);
+	background: var(--canvas);
+	cursor: pointer;
+	font-size: 15px;
+	transition: border-color 0.15s ease, background 0.15s ease;
+}
+
+.opt:hover:not(:disabled) {
+	border-color: var(--blue);
+	background: var(--blue-soft);
+}
+
+.opt .key {
+	flex: none;
+	width: 28px;
+	height: 28px;
+	display: grid;
+	place-items: center;
+	border-radius: 6px;
+	background: var(--surface2);
+	font-family: var(--mono);
+	font-size: 13px;
+	font-weight: 700;
+}
+
+.opt .txt {
+	font-family: var(--mono);
+	font-size: 14px;
+	word-break: break-word;
+}
+
+.opt.is-picked {
+	border-color: var(--blue);
+	background: var(--blue-soft);
+}
+.opt.is-picked .key {
+	background: var(--blue);
+	color: #fff;
+}
+
+.opt:disabled {
+	cursor: default;
+}
+
+.timer {
+	height: 8px;
+	border-radius: 999px;
+	background: var(--surface2);
+	overflow: hidden;
+}
+
+.timer > i {
+	display: block;
+	height: 100%;
+	width: 100%;
+	background: var(--blue);
+	transition: width 0.25s linear, background 0.3s ease;
+}
+
+.timer.warn > i {
+	background: var(--orange);
+}
+.timer.danger > i {
+	background: var(--red);
+}
+
+.lb {
+	display: flex;
+	flex-direction: column;
+	gap: 6px;
+}
+
+.lb-row {
+	display: grid;
+	grid-template-columns: 32px 1fr auto;
+	align-items: center;
+	gap: 12px;
+	padding: 10px 14px;
+	border-radius: var(--radius);
+	background: var(--soft);
+	border: 1px solid transparent;
+}
+
+.lb-row.top {
+	background: var(--blue-soft);
+	border-color: #cbe3f8;
+}
+
+.lb-rank {
+	font-family: var(--mono);
+	font-weight: 700;
+	color: var(--muted);
+}
+
+.lb-name {
+	font-weight: 550;
+	overflow: hidden;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+}
+
+.lb-score {
+	font-family: var(--mono);
+	font-weight: 700;
+}
+
+.lb-row.off .lb-name {
+	color: var(--muted);
+}
+
+.code-display {
+	font-family: var(--mono);
+	font-size: clamp(32px, 7vw, 56px);
+	font-weight: 700;
+	letter-spacing: 0.12em;
+	color: var(--blue);
+	line-height: 1.1;
+}
+
+.dot {
+	width: 8px;
+	height: 8px;
+	border-radius: 50%;
+	background: var(--muted);
+	flex: none;
+}
+.dot.on {
+	background: var(--green);
+}
+.dot.off {
+	background: var(--red);
+}
+
+.chips {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 8px;
+}
+
+.chip {
+	padding: 6px 14px;
+	border-radius: 999px;
+	background: var(--surface2);
+	border: 1px solid transparent;
+	font-size: 14px;
+	font-weight: 550;
+	color: var(--muted);
+	cursor: pointer;
+}
+.chip.a {
+	background: var(--blue-soft);
+	border-color: #cbe3f8;
+	color: #1b5f9e;
+}
+.chip.b {
+	background: var(--orange-soft);
+	border-color: #f2d8bf;
+	color: #9a5a24;
+}
+
+.toggle {
+	display: flex;
+	align-items: center;
+	gap: 10px;
+	cursor: pointer;
+	font-size: 15px;
+}
+
+.banner {
+	padding: 12px 16px;
+	border-radius: var(--radius);
+	font-size: 14px;
+	font-weight: 550;
+}
+.banner-red {
+	background: var(--red-soft);
+	color: #a9382d;
+}
+.banner-green {
+	background: var(--green-soft);
+	color: #2f7150;
+}
+.banner-blue {
+	background: var(--blue-soft);
+	color: #1b5f9e;
+}
+
+/* ---------- Utilitas layout, tipografi & spasi ----------
+ * Menggantikan style="..." inline yang dulu tersebar di index.html,
+ * host.html, play.html, dan memory.html supaya ukuran & jarak konsisten
+ * di semua halaman dan gampang diubah dari satu tempat. */
+.text-tiny { font-size: var(--fs-tiny); }
+.text-small { font-size: var(--fs-small); }
+.text-caption { font-size: var(--fs-caption); }
+.text-md { font-size: var(--fs-md); }
+.text-lg { font-size: var(--fs-lg); }
+.text-xl { font-size: var(--fs-xl); }
+.text-2xl { font-size: var(--fs-2xl); }
+
+.page-title { font-size: var(--fs-page-title); }
+.page-title-lg { font-size: var(--fs-page-title-lg); }
+.card-title { font-size: var(--fs-card-title); }
+.result-mark { font-size: 44px; line-height: 1; }
+
+.hint { margin: var(--space-1) 0 0; font-size: var(--fs-small); }
+.divider { border: none; border-top: 1px solid var(--border); margin: var(--space-1) 0; }
+
+.m-0 { margin: 0; }
+.mx-auto { margin-left: auto; margin-right: auto; }
+.ml-auto { margin-left: auto; }
+.mt-1 { margin-top: var(--space-1); }
+.mt-3 { margin-top: var(--space-3); }
+
+.gap-2 { gap: var(--space-2); }
+.gap-3 { gap: var(--space-3); }
+.gap-4 { gap: var(--space-4); }
+.gap-5 { gap: var(--space-5); }
+.gap-9 { gap: var(--space-9); }
+
+.text-center { text-align: center; }
+.text-right { text-align: right; }
+.font-semibold { font-weight: 600; }
+
+.max-w-sm { max-width: 640px; }
+.max-w-md { max-width: 760px; }
+
+.code-display--compact { font-size: 44px; }
+.codebox-compact { font-size: var(--fs-caption); padding: var(--space-6) 18px; }
+
+.join-url { font-size: var(--fs-md); font-weight: 600; }
+
+.vote-row {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: var(--space-3);
+	font-size: var(--fs-small);
+}
+.vote-bar { margin-top: var(--space-1); }
+
+.code-input {
+	text-transform: uppercase;
+	font-family: var(--mono);
+	font-size: var(--fs-2xl);
+	letter-spacing: 0.2em;
+	text-align: center;
+}
+
+/* Grid dua kolom yang dulu di-toggle lewat JS matchMedia (mq/COLS/
+ * applyStack) di host.html/play.html - sekarang murni CSS, jadi ikut
+ * berubah otomatis saat rotasi layar tanpa listener JS. */
+.lobby-grid,
+.game-grid,
+.reveal-grid {
+	display: grid;
+	gap: var(--space-8);
+	align-items: start;
+}
+.lobby-grid { grid-template-columns: minmax(0, 1.15fr) minmax(0, 1fr); }
+.game-grid { grid-template-columns: minmax(0, 1.6fr) minmax(0, 1fr); }
+.reveal-grid { grid-template-columns: minmax(0, 1.35fr) minmax(0, 1fr); gap: var(--space-7); }
+
+@media (max-width: 860px) {
+	.lobby-grid,
+	.game-grid,
+	.reveal-grid {
+		grid-template-columns: 1fr;
+	}
+}
+
+@media (max-width: 720px) {
+	.wrap {
+		padding: 20px 16px 48px;
+	}
+	.opts {
+		grid-template-columns: 1fr;
+	}
+	.card,
+	.flip-face {
+		padding: 18px;
+	}
+}
