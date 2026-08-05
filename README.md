@@ -62,12 +62,34 @@ Halaman yang tersedia:
 - `/play` - halaman peserta (dibuka dari HP)
 - `/memory` - latihan mandiri (memory match), tanpa perlu room
 
+## Menambah bank soal baru (mis. SQL, materi lain)
+
+Soal tidak lagi hardcode ke satu file. Setiap file `.json` di folder
+`banks/` otomatis jadi satu pilihan "Bank soal" di dropdown lobby guru (di
+`/host`), tanpa perlu ubah kode sama sekali:
+
+1. Buat file baru, mis. `banks/sql-dasar.json`, isinya array soal dengan
+   skema yang sama seperti `banks/js-dasar.json` / `banks/html-dasar.json`
+   (`id`, `type`, `level`, `lang` opsional, `prompt`, `code`, `options`,
+   `answer`, `explanation`, `timeLimit`).
+2. Restart server (`npm start` ulang).
+3. Nama file otomatis jadi label rapi di dropdown - `sql-dasar.json` tampil
+   sebagai "SQL Dasar", `js-dasar.json` sebagai "JS Dasar", dst. Kata-kata
+   umum (js, html, sql, css, php, api, json) otomatis huruf besar semua.
+4. Kalau file JSON tidak valid atau kosong, server akan melewatinya dan
+   menampilkan peringatan di terminal saat start, bukan crash - bank lain
+   tetap jalan normal.
+
+Guru tinggal pilih bank yang mau dipakai dari dropdown sebelum menekan
+"Mulai kuis"; jumlah soal maksimal & tombol jenis kartu otomatis menyesuaikan
+bank yang dipilih.
+
 ## Struktur folder
 
 ```
 server.js            HTTP static server + WebSocket (pakai `ws`)
 lib/game.js          Logika room, skor, alur soal (pakai `nanoid`)
-questions.json       Bank soal
+banks/*.json         Bank-bank soal, satu file per mata pelajaran
 public/index.html    Beranda
 public/host.html     Layar guru
 public/play.html     Halaman peserta

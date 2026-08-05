@@ -19,9 +19,59 @@ const { createGame } = require('./lib/game')
 
 const PORT = Number(process.env.PORT || 8321)
 const PUBLIC = path.join(__dirname, 'public')
-const QUESTIONS = JSON.parse(
-	fs.readFileSync(path.join(__dirname, 'questions.json'), 'utf8'),
-)
+const BANKS_DIR = path.join(__dirname, 'banks')
+
+// Kata yang tetap huruf besar semua di label bank (nama file js-dasar.json
+// jadi label "JS Dasar", bukan "Js Dasar").
+const ACRONYMS = new Set(['js', 'html', 'sql', 'css', 'php', 'api', 'json'])
+
+function bankLabel(fileName) {
+	const base = fileName.replace(/\.json$/i, '')
+	return base
+		.split(/[-_]+/)
+		.map((w) =>
+			ACRONYMS.has(w.toLowerCase())
+				? w.toUpperCase()
+				: w.charAt(0).toUpperCase() + w.slice(1),
+		)
+		.join(' ')
+}
+
+// Setiap file di folder banks/ adalah satu bank soal (array JSON dengan skema
+// yang sama seperti dulu questions.json). Tambah subjek baru = taruh file
+// baru di sini, tidak perlu ubah kode - tinggal restart server.
+function loadBanks() {
+	const banks = new Map()
+	const files = fs
+		.readdirSync(BANKS_DIR)
+		.filter((f) => f.toLowerCase().endsWith('.json'))
+		.sort()
+	for (const file of files) {
+		const id = file.replace(/\.json$/i, '')
+		try {
+			const data = JSON.parse(fs.readFileSync(path.join(BANKS_DIR, file), 'utf8'))
+			if (!Array.isArray(data) || !data.length) {
+				console.warn('  ! Bank "' + file + '" dilewati: bukan array atau kosong.')
+				continue
+			}
+			banks.set(id, { id, label: bankLabel(file), questions: data })
+		} catch (err) {
+			console.warn('  ! Bank "' + file + '" dilewati (JSON tidak valid): ' + err.message)
+		}
+	}
+	return banks
+}
+
+const BANKS = loadBanks()
+if (!BANKS.size) {
+	console.error(
+		'Tidak ada bank soal valid di folder banks/. Tambahkan minimal satu file .json lalu jalankan lagi.',
+	)
+	process.exit(1)
+}
+// js-dasar jadi default kalau ada (materi utama/awal), selain itu pakai
+// bank pertama secara alfabetis.
+const DEFAULT_BANK = BANKS.has('js-dasar') ? 'js-dasar' : [...BANKS.keys()][0]
 
 const MIME = {
 	'.html': 'text/html; charset=utf-8',
@@ -65,7 +115,7 @@ const server = http.createServer((req, res) => {
 	})
 })
 
-const game = createGame(QUESTIONS, {
+const game = createGame(BANKS, DEFAULT_BANK, {
 	getJoinUrls: () => lanAddresses().map((ip) => ip + ':' + PORT),
 })
 
@@ -126,6 +176,8 @@ server.listen(PORT, '0.0.0.0', () => {
 	} else {
 		console.log('  (Tidak ada alamat LAN terdeteksi - cek koneksi WiFi)')
 	}
-	console.log('  Soal tersedia    : ' + QUESTIONS.length)
+	console.log('  Bank soal        :')
+	for (const b of BANKS.values())
+		console.log('      ' + b.label + ' (' + b.questions.length + ' soal)')
 	console.log('')
 })

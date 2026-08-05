@@ -33,6 +33,10 @@
 
 					<div class="card stack">
 						<h2 class="card-title">Pengaturan</h2>
+						<div>
+							<span class="label">Bank soal</span>
+							<select class="input" id="optBank"></select>
+						</div>
 						<label class="toggle">
 							<input type="checkbox" id="optTeam" />
 							<span>Mode tim (Tim A vs Tim B)</span>
@@ -214,6 +218,7 @@
 
 			function readOptions() {
 				return {
+					bank: el('optBank').value,
 					teamMode: el('optTeam').checked,
 					shuffle: el('optShuffle').checked,
 					count: Number(el('optCount').value) || 10,
@@ -224,7 +229,7 @@
 				sock.send({ t: 'host:options', options: readOptions() })
 			}
 
-			for (const id of ['optTeam', 'optShuffle', 'optCount'])
+			for (const id of ['optBank', 'optTeam', 'optShuffle', 'optCount'])
 				el(id).addEventListener('change', pushOptions)
 
 			el('start').onclick = () => {
@@ -259,6 +264,21 @@
 				if (m.t === 'room') {
 					sessionStorage.setItem('bb_host_code', m.code)
 					el('code').textContent = m.code
+					if (m.banks) {
+						el('optBank').innerHTML = m.banks
+							.map(
+								(b) =>
+									'<option value="' +
+									escapeHtml(b.id) +
+									'">' +
+									escapeHtml(b.label) +
+									' (' +
+									b.count +
+									' soal)</option>',
+							)
+							.join('')
+					}
+					el('optBank').value = m.options.bank
 					el('optCount').max = m.available
 					el('urls').innerHTML = m.joinUrls.length
 						? m.joinUrls
