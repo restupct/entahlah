@@ -63,13 +63,48 @@ export function escapeHtml(s) {
 		.replace(/>/g, '&gt;')
 }
 
-/** Pewarnaan sintaks sederhana - cukup untuk potongan kode pendek. */
-export function highlight(code) {
-	return escapeHtml(code)
+function highlightJs(escaped) {
+	return escaped
 		.replace(/(&#39;|')([^'\n]*)\1/g, '<span class="s">$1$2$1</span>')
 		.replace(/\/\/[^\n]*/g, '<span class="c">$&</span>')
 		.replace(KEYWORDS, '<span class="k">$&</span>')
 		.replace(/\b(\d+)\b/g, '<span class="n">$1</span>')
+}
+
+// Urutan penting: komentar dulu, lalu atribut, baru nama tag - supaya regex
+// nama tag tidak ikut mewarnai markup <span> yang baru saja kita sisipkan
+// sendiri (mis. class="n" pada span atribut).
+const HTML_COMMENT = /&lt;!--[\s\S]*?--&gt;/g
+const HTML_ATTR = /(\s)([a-zA-Z-:]+)(=)("[^"]*"|'[^']*')/g
+const HTML_TAG = /(&lt;\/?)([a-zA-Z][\w-]*)/g
+
+function highlightHtml(escaped) {
+	return escaped
+		.replace(HTML_COMMENT, (m) => '<span class="c">' + m + '</span>')
+		.replace(
+			HTML_ATTR,
+			(m, sp, name, eq, val) =>
+				sp +
+				'<span class="n">' +
+				name +
+				'</span>' +
+				eq +
+				'<span class="s">' +
+				val +
+				'</span>',
+		)
+		.replace(HTML_TAG, (m, open, name) => open + '<span class="k">' + name + '</span>')
+}
+
+/**
+ * Pewarnaan sintaks sederhana - cukup untuk potongan kode pendek.
+ * `lang` memilih tokenizer: 'js' (default, dipakai semua soal lama) atau
+ * 'html'. Bahasa lain yang belum dikenal akan tampil polos tanpa warna,
+ * bukan error - aman untuk dikembangkan lagi nanti (mis. 'sql').
+ */
+export function highlight(code, lang = 'js') {
+	const escaped = escapeHtml(code)
+	return lang === 'html' ? highlightHtml(escaped) : highlightJs(escaped)
 }
 
 export const LETTERS = ['A', 'B', 'C', 'D', 'E', 'F']

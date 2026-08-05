@@ -230,7 +230,7 @@
 					el('pType').textContent = m.typeLabel
 					el('pPos').textContent = m.index + 1 + ' / ' + m.total
 					el('pPrompt').textContent = m.prompt
-					el('pCode').innerHTML = highlight(m.code)
+					el('pCode').innerHTML = highlight(m.code, m.lang)
 					el('pHint').textContent = 'Makin cepat menjawab, makin besar poinnya.'
 					el('pOpts').innerHTML = optionButtonsHtml(m.options, {
 						tag: 'button',
@@ -267,7 +267,7 @@
 					el('pScore').textContent = m.score
 					if (current) {
 						el('pBackPrompt').textContent = current.prompt
-						el('pBackCode').innerHTML = highlight(current.code)
+						el('pBackCode').innerHTML = highlight(current.code, current.lang)
 						el('pKey').textContent =
 							'Jawaban benar: ' +
 							LETTERS[m.answer] +

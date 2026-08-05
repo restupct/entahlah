@@ -288,7 +288,7 @@
 					el('gType').textContent = m.typeLabel
 					el('gPos').textContent = 'Kartu ' + (m.index + 1) + ' / ' + m.total
 					el('gPrompt').textContent = m.prompt
-					el('gCode').innerHTML = highlight(m.code)
+					el('gCode').innerHTML = highlight(m.code, m.lang)
 					el('gOpts').innerHTML = optionButtonsHtml(m.options)
 					el('btnReveal').classList.remove('hidden')
 					el('btnNext').classList.add('hidden')
@@ -312,7 +312,7 @@
 						LETTERS[m.answer] + '. ' + current.options[m.answer]
 					el('gWhy').textContent = m.explanation
 					el('gBackPrompt').textContent = current.prompt
-					el('gBackCode').innerHTML = highlight(current.code)
+					el('gBackCode').innerHTML = highlight(current.code, current.lang)
 
 					const total = Math.max(1, m.responders)
 					el('gStats').innerHTML = current.options

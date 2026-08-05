@@ -286,5 +286,90 @@
     "answer": 1,
     "explanation": "Operator ?? hanya menangkap null dan undefined, tidak seperti || yang juga menangkap 0 dan string kosong.",
     "timeLimit": 25
+  },
+  {
+    "id": "c19",
+    "type": "predict-output",
+    "level": 1,
+    "lang": "html",
+    "prompt": "Bagian mana yang akan tampil TEBAL di halaman?",
+    "code": "<p>Ini teks <strong>penting</strong> sekali.</p>",
+    "options": [
+      "Ini teks",
+      "penting",
+      "sekali",
+      "Semua teks dalam paragraf"
+    ],
+    "answer": 1,
+    "explanation": "Tag <strong> membuat teks di dalamnya tampil tebal. Hanya kata yang dibungkus tag itu yang terpengaruh.",
+    "timeLimit": 15
+  },
+  {
+    "id": "c20",
+    "type": "fix-bug",
+    "level": 2,
+    "lang": "html",
+    "prompt": "Kenapa paragraf di bawah judul ikut tampil besar seperti heading?",
+    "code": "<h1>Judul Artikel\n<p>Ini paragraf pembuka yang seharusnya berukuran normal.</p>",
+    "options": [
+      "Tag <h1> tidak pernah ditutup",
+      "Tag <p> salah penulisan",
+      "Browser tidak mendukung <p>",
+      "Urutan tag terbalik"
+    ],
+    "answer": 0,
+    "explanation": "Tidak ada </h1> penutup, jadi browser menganggap semua konten setelahnya - termasuk paragraf - masih ada di dalam heading tersebut.",
+    "timeLimit": 25
+  },
+  {
+    "id": "c21",
+    "type": "fix-bug",
+    "level": 2,
+    "lang": "html",
+    "prompt": "Kenapa gambar ini tidak pernah muncul, padahal file logo.png ada di folder yang sama?",
+    "code": "<img source=\"logo.png\" alt=\"Logo\">",
+    "options": [
+      "Seharusnya atribut src, bukan source",
+      "Nama file harus huruf besar semua",
+      "Tag img wajib punya penutup </img>",
+      "Atribut alt tidak boleh diisi"
+    ],
+    "answer": 0,
+    "explanation": "Atribut yang benar untuk sumber gambar adalah src. Browser diam-diam mengabaikan atribut yang tidak dikenalnya, seperti source.",
+    "timeLimit": 20
+  },
+  {
+    "id": "c22",
+    "type": "pairing",
+    "level": 1,
+    "lang": "html",
+    "prompt": "Pasangkan tag dengan fungsinya",
+    "code": "<a href=\"...\">teks</a>",
+    "options": [
+      "Membuat tautan/link",
+      "Membuat daftar bernomor",
+      "Membuat tabel",
+      "Membuat kolom input"
+    ],
+    "answer": 0,
+    "explanation": "Tag <a> (anchor) dengan atribut href dipakai untuk membuat tautan ke halaman atau alamat lain.",
+    "timeLimit": 15
+  },
+  {
+    "id": "c23",
+    "type": "trace-path",
+    "level": 3,
+    "lang": "html",
+    "prompt": "Elemen apa saja yang menjadi ANAK LANGSUNG dari <div class=\"card\">?",
+    "code": "<div class=\"card\">\n  <h2>Judul</h2>\n  <p>Deskripsi <span>singkat</span></p>\n</div>",
+    "options": [
+      "<h2> dan <p>",
+      "<h2>, <p>, dan <span>",
+      "Hanya <span>",
+      "<div> itu sendiri"
+    ],
+    "answer": 0,
+    "explanation": "Anak langsung adalah elemen satu level tepat di dalam <div>, yaitu <h2> dan <p>. <span> adalah cucu karena bersarang di dalam <p>.",
+    "timeLimit": 25
   }
 ]
