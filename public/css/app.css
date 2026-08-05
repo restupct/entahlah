@@ -552,6 +552,25 @@ pre {
 }
 .vote-bar { margin-top: var(--space-1); }
 
+/* Penanda jawaban benar di layar guru - bar hijau saja kadang kurang
+ * kelihatan dari jarak jauh/proyektor, jadi label opsi yang benar juga
+ * ditebalkan + diberi centang eksplisit. */
+.vote-row-correct > span {
+	font-weight: 700;
+	color: #2f7150;
+}
+.vote-correct-badge {
+	display: inline-flex;
+	align-items: center;
+	gap: 2px;
+	padding: 1px 8px;
+	border-radius: 999px;
+	background: var(--green-soft);
+	color: #2f7150;
+	font-size: var(--fs-tiny);
+	font-weight: 700;
+}
+
 .code-input {
 	text-transform: uppercase;
 	font-family: var(--mono);

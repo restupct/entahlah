@@ -320,11 +320,16 @@
 							const pct = Math.round((m.stats[i] / total) * 100)
 							const okOpt = i === m.answer
 							return (
-								'<div><div class="vote-row">' +
+								'<div><div class="vote-row' +
+								(okOpt ? ' vote-row-correct' : '') +
+								'">' +
 								'<span>' +
 								LETTERS[i] +
 								'. ' +
 								escapeHtml(o) +
+								(okOpt
+									? ' <span class="vote-correct-badge">&#10003; Benar</span>'
+									: '') +
 								'</span><strong>' +
 								m.stats[i] +
 								' (' +

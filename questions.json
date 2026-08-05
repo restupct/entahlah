@@ -306,36 +306,36 @@
   },
   {
     "id": "c20",
-    "type": "fix-bug",
-    "level": 2,
+    "type": "predict-output",
+    "level": 1,
     "lang": "html",
-    "prompt": "Kenapa paragraf di bawah judul ikut tampil besar seperti heading?",
-    "code": "<h1>Judul Artikel\n<p>Ini paragraf pembuka yang seharusnya berukuran normal.</p>",
+    "prompt": "Apa yang terjadi saat pengguna mengklik teks 'Beranda'?",
+    "code": "<a href='/home'>Beranda</a>",
     "options": [
-      "Tag <h1> tidak pernah ditutup",
-      "Tag <p> salah penulisan",
-      "Browser tidak mendukung <p>",
-      "Urutan tag terbalik"
+      "Teks berubah warna menjadi biru",
+      "Halaman berpindah ke '/home'",
+      "Sebuah gambar ditampilkan",
+      "Halaman dimuat ulang tanpa aksi"
     ],
-    "answer": 0,
-    "explanation": "Tidak ada </h1> penutup, jadi browser menganggap semua konten setelahnya - termasuk paragraf - masih ada di dalam heading tersebut.",
-    "timeLimit": 25
+    "answer": 1,
+    "explanation": "Tag <a> digunakan untuk membuat hyperlink. Atribut href menentukan URL tujuan saat link diklik.",
+    "timeLimit": 15
   },
   {
     "id": "c21",
     "type": "fix-bug",
     "level": 2,
     "lang": "html",
-    "prompt": "Kenapa gambar ini tidak pernah muncul, padahal file logo.png ada di folder yang sama?",
-    "code": "<img source=\"logo.png\" alt=\"Logo\">",
+    "prompt": "Teks bayangan 'Masukkan email' tidak menghilang saat pengguna mengetik. Apa yang salah?",
+    "code": "<input type='email' value='Masukkan email'>",
     "options": [
-      "Seharusnya atribut src, bukan source",
-      "Nama file harus huruf besar semua",
-      "Tag img wajib punya penutup </img>",
-      "Atribut alt tidak boleh diisi"
+      "Ubah type menjadi 'text'",
+      "Hapus atribut type",
+      "Ganti 'value' menjadi 'placeholder'",
+      "Ganti 'email' dengan teks biasa"
     ],
-    "answer": 0,
-    "explanation": "Atribut yang benar untuk sumber gambar adalah src. Browser diam-diam mengabaikan atribut yang tidak dikenalnya, seperti source.",
+    "answer": 2,
+    "explanation": "Atribut 'value' menetapkan nilai awal yang harus dihapus manual. 'placeholder' memberikan teks petunjuk yang hilang otomatis saat diketik.",
     "timeLimit": 20
   },
   {
@@ -343,33 +343,475 @@
     "type": "pairing",
     "level": 1,
     "lang": "html",
-    "prompt": "Pasangkan tag dengan fungsinya",
-    "code": "<a href=\"...\">teks</a>",
+    "prompt": "Mana pasangan tag yang tepat untuk membuat daftar dengan angka berurutan?",
+    "code": "<!-- Daftar Item -->\n<...> \n  <li>Item 1</li>\n</...>",
     "options": [
-      "Membuat tautan/link",
-      "Membuat daftar bernomor",
-      "Membuat tabel",
-      "Membuat kolom input"
+      "<ul> dan </ul>",
+      "<ol> dan </ol>",
+      "<list> dan </list>",
+      "<dl> dan </dl>"
     ],
-    "answer": 0,
-    "explanation": "Tag <a> (anchor) dengan atribut href dipakai untuk membuat tautan ke halaman atau alamat lain.",
+    "answer": 1,
+    "explanation": "Tag <ol> (ordered list) membuat daftar berurutan dengan angka atau huruf, sedangkan <ul> untuk daftar dengan peluru (bullet).",
     "timeLimit": 15
   },
   {
     "id": "c23",
     "type": "trace-path",
+    "level": 2,
+    "lang": "html",
+    "prompt": "Bagaimana struktur visual dari tabel ini saat dirender?",
+    "code": "<table>\n  <tr><td>A</td><td>B</td></tr>\n  <tr><td>C</td><td>D</td></tr>\n</table>",
+    "options": [
+      "1 baris, 4 kolom",
+      "4 baris, 1 kolom",
+      "2 baris, 2 kolom",
+      "Tabel kosong tanpa isi"
+    ],
+    "answer": 2,
+    "explanation": "Tag <tr> mendefinisikan baris, dan <td> mendefinisikan sel (kolom) di dalamnya. Kode ini memiliki 2 baris yang masing-masing berisi 2 sel.",
+    "timeLimit": 20
+  },
+  {
+    "id": "c24",
+    "type": "predict-output",
+    "level": 1,
+    "lang": "html",
+    "prompt": "Apa yang akan muncul di layar peramban?",
+    "code": "<!-- <p>Teks Rahasia</p> -->\n<p>Teks Biasa</p>",
+    "options": [
+      "Teks Rahasia Teks Biasa",
+      "Teks Biasa",
+      "Teks Rahasia",
+      "Tidak ada yang muncul"
+    ],
+    "answer": 1,
+    "explanation": "Tanda <!-- ... --> adalah komentar HTML. Konten di dalamnya diabaikan oleh browser dan tidak akan ditampilkan.",
+    "timeLimit": 15
+  },
+  {
+    "id": "c25",
+    "type": "fix-bug",
     "level": 3,
     "lang": "html",
-    "prompt": "Elemen apa saja yang menjadi ANAK LANGSUNG dari <div class=\"card\">?",
-    "code": "<div class=\"card\">\n  <h2>Judul</h2>\n  <p>Deskripsi <span>singkat</span></p>\n</div>",
+    "prompt": "Dua tombol radio ini bisa dipilih bersamaan. Bagaimana cara agar hanya satu yang bisa dipilih?",
+    "code": "<input type='radio' value='Pria'>\n<input type='radio' value='Wanita'>",
     "options": [
-      "<h2> dan <p>",
-      "<h2>, <p>, dan <span>",
-      "Hanya <span>",
-      "<div> itu sendiri"
+      "Tambahkan atribut name dengan nilai yang sama",
+      "Ubah type menjadi 'checkbox'",
+      "Tambahkan atribut required",
+      "Tambahkan id pada masing-masing input"
     ],
     "answer": 0,
-    "explanation": "Anak langsung adalah elemen satu level tepat di dalam <div>, yaitu <h2> dan <p>. <span> adalah cucu karena bersarang di dalam <p>.",
+    "explanation": "Tombol radio memerlukan atribut 'name' dengan nilai yang sama agar browser mengelompokkannya sehingga hanya satu yang dapat dipilih.",
     "timeLimit": 25
+  },
+  {
+    "id": "c26",
+    "type": "pairing",
+    "level": 2,
+    "lang": "html",
+    "prompt": "Manakah kelompok tag yang semuanya adalah elemen block-level (membuat baris baru)?",
+    "code": "<!-- Pilih yang block-level -->",
+    "options": [
+      "<span>, <a>, <img>",
+      "<div>, <p>, <h1>",
+      "<strong>, <em>, <br>",
+      "<td>, <th>, <tr>"
+    ],
+    "answer": 1,
+    "explanation": "Tag seperti <div>, <p>, dan <h1> mengambil lebar penuh dan memulai baris baru secara default (block-level).",
+    "timeLimit": 20
+  },
+  {
+    "id": "c27",
+    "type": "trace-path",
+    "level": 3,
+    "lang": "html",
+    "prompt": "Pada elemen mana gambar ini akan gagal dimuat, tetapi tidak menyebabkan halaman rusak?",
+    "code": "<img src='salah.jpg' alt='Logo Web'>",
+    "options": [
+      "Browser akan menampilkan teks 'salah.jpg'",
+      "Browser akan memunculkan popup error",
+      "Browser akan menampilkan teks 'Logo Web'",
+      "Browser akan menyembunyikan elemen secara total"
+    ],
+    "answer": 2,
+    "explanation": "Jika gambar gagal dimuat dari 'src', browser akan menampilkan teks alternatif yang ada di atribut 'alt'.",
+    "timeLimit": 25
+  },
+  {
+    "id": "c28",
+    "type": "predict-output",
+    "level": 2,
+    "lang": "html",
+    "prompt": "Apa yang terjadi jika form dikirim tanpa mengisi input ini?",
+    "code": "<input type='text' required>",
+    "options": [
+      "Form terkirim dengan nilai kosong",
+      "Browser menghentikan pengiriman form dan memberi peringatan",
+      "Browser mengisi dengan nilai default",
+      "Input akan disembunyikan"
+    ],
+    "answer": 1,
+    "explanation": "Atribut 'required' adalah validasi bawaan HTML. Browser akan mencegah submit jika field tersebut kosong.",
+    "timeLimit": 20
+  },
+  {
+    "id": "c29",
+    "type": "fix-bug",
+    "level": 1,
+    "lang": "html",
+    "prompt": "Teks ini seharusnya pindah ke baris baru, tetapi malah menyambung. Apa tag yang kurang?",
+    "code": "<p>Baris satuBaris dua</p>",
+    "options": [
+      "<hr>",
+      "<enter>",
+      "<br>",
+      "<space>"
+    ],
+    "answer": 2,
+    "explanation": "Tag <br> (line break) digunakan untuk memaksa pergantian baris tanpa membuat paragraf baru.",
+    "timeLimit": 15
+  },
+  {
+    "id": "c30",
+    "type": "pairing",
+    "level": 1,
+    "lang": "html",
+    "prompt": "Manakah input yang hanya menampilkan karakter titik/bintang (tersembunyi) saat diketik?",
+    "code": "<input type='...'>",
+    "options": [
+      "text",
+      "email",
+      "password",
+      "hidden"
+    ],
+    "answer": 2,
+    "explanation": "Atribut type='password' menyamarkan input karakter demi keamanan, sedangkan type='hidden' menyembunyikan seluruh input dari UI.",
+    "timeLimit": 15
+  },
+  {
+    "id": "c31",
+    "type": "trace-path",
+    "level": 2,
+    "lang": "html",
+    "prompt": "Berdasarkan hirarki heading HTML, manakah urutan yang menyalahi semantik yang baik meskipun bisa dirender?",
+    "code": "<h1>Judul</h1>\n<h3>Subjudul</h3>\n<h2>Bagian</h2>",
+    "options": [
+      "Lompat dari h1 langsung ke h3",
+      "Menggunakan h2 setelah h3",
+      "Semuanya benar dan disarankan",
+      "A dan B menunjukkan hierarki yang kurang tepat"
+    ],
+    "answer": 3,
+    "explanation": "Heading HTML sebaiknya berurutan sesuai levelnya (h1 -> h2 -> h3) tanpa melompati level, untuk menjaga struktur dokumen yang logis.",
+    "timeLimit": 20
+  },
+  {
+    "id": "c32",
+    "type": "predict-output",
+    "level": 2,
+    "lang": "html",
+    "prompt": "Bagaimana browser memproses spasi ekstra dalam tag <p> ini?",
+    "code": "<p>Halo       Dunia</p>",
+    "options": [
+      "Tampil dengan 7 spasi di antara kata",
+      "Menjadi 'HaloDunia'",
+      "Tampil sebagai 'Halo Dunia' dengan 1 spasi",
+      "Browser akan mengabaikan tag tersebut"
+    ],
+    "answer": 2,
+    "explanation": "HTML mengabaikan spasi ganda berturut-turut (whitespace collapse) dan hanya merendernya sebagai satu spasi.",
+    "timeLimit": 15
+  },
+  {
+    "id": "c33",
+    "type": "fix-bug",
+    "level": 3,
+    "lang": "html",
+    "prompt": "Tabel ini berantakan. Kolom kedua di baris pertama seakan hilang. Apa penyebabnya?",
+    "code": "<table>\n  <tr><td>No</td></tr>\n  <tr><td>1</td><td>Andi</td></tr>\n</table>",
+    "options": [
+      "Baris pertama kekurangan satu tag <td>",
+      "Tag <table> tidak tertutup",
+      "Harus menggunakan tag <th> untuk baris pertama",
+      "Andi tidak boleh berada di tag <td>"
+    ],
+    "answer": 0,
+    "explanation": "Baris kedua memiliki dua sel (<td>), tetapi baris pertama hanya memiliki satu. Agar simetris, baris pertama harus ditambah sel kedua.",
+    "timeLimit": 25
+  },
+  {
+    "id": "c34",
+    "type": "pairing",
+    "level": 2,
+    "lang": "html",
+    "prompt": "Atribut apa yang paling tepat dipasangkan dengan input type='number' untuk membatasi nilai maksimal?",
+    "code": "<input type='number' ...='100'>",
+    "options": [
+      "limit",
+      "maxlength",
+      "max",
+      "size"
+    ],
+    "answer": 2,
+    "explanation": "Untuk input type='number' atau 'date', pembatasan nilai numerik/tanggal menggunakan atribut 'min' dan 'max'.",
+    "timeLimit": 15
+  },
+  {
+    "id": "c35",
+    "type": "trace-path",
+    "level": 1,
+    "lang": "html",
+    "prompt": "Berapa banyak garis pemisah horizontal yang akan tampil?",
+    "code": "<p>Atas</p>\n<hr>\n<p>Tengah</p>\n<hr />\n<p>Bawah</p>",
+    "options": [
+      "0",
+      "1",
+      "2",
+      "3"
+    ],
+    "answer": 2,
+    "explanation": "Tag <hr> (horizontal rule) digunakan untuk membuat garis pemisah. Pada kode tersebut terdapat dua tag <hr>.",
+    "timeLimit": 15
+  },
+  {
+    "id": "c36",
+    "type": "predict-output",
+    "level": 3,
+    "lang": "html",
+    "prompt": "Apa yang terjadi jika tag penutup </a> dilupakan di sebuah dokumen HTML panjang?",
+    "code": "<a href='#'>Klik saya\n<p>Paragraf di bawah</p>",
+    "options": [
+      "Hanya kata 'Klik saya' yang menjadi tautan",
+      "Semua teks setelahnya ikut menjadi tautan",
+      "Tautan tidak bisa diklik",
+      "Halaman gagal dimuat total"
+    ],
+    "answer": 1,
+    "explanation": "Jika tag </a> tidak ditutup, browser akan menganggap semua elemen dan teks yang ada di bawahnya sebagai bagian dari tautan tersebut.",
+    "timeLimit": 25
+  },
+  {
+    "id": "c37",
+    "type": "fix-bug",
+    "level": 2,
+    "lang": "html",
+    "prompt": "Pengguna mencoba memilih tanggal tapi hanya bisa mengetik teks. Bagaimana memperbaikinya?",
+    "code": "<input type='datetime'>",
+    "options": [
+      "Ubah type menjadi 'date'",
+      "Tambahkan class='date'",
+      "Gunakan tag <date>",
+      "Tambahkan atribut format='date'"
+    ],
+    "answer": 0,
+    "explanation": "Tipe input yang valid untuk memunculkan pemilih tanggal adalah type='date', bukan 'datetime'.",
+    "timeLimit": 20
+  },
+  {
+    "id": "c38",
+    "type": "pairing",
+    "level": 1,
+    "lang": "html",
+    "prompt": "Mana yang merupakan tag untuk membuat teks miring dengan penekanan semantik (emphasis)?",
+    "code": "<!-- Pilih elemen teks miring -->",
+    "options": [
+      "<i>",
+      "<em>",
+      "<italic>",
+      "<strong>"
+    ],
+    "answer": 1,
+    "explanation": "Tag <em> membuat teks miring sekaligus memberikan makna penekanan (emphasis) bagi screen reader, beda dengan <i> yang hanya mengubah gaya visual.",
+    "timeLimit": 15
+  },
+  {
+    "id": "c39",
+    "type": "trace-path",
+    "level": 3,
+    "lang": "html",
+    "prompt": "Manakah urutan nesting (bersarang) yang SALAH dalam HTML murni?",
+    "code": "<!-- Analisis hirarki -->",
+    "options": [
+      "<div> di dalam <div>",
+      "<p> di dalam <div>",
+      "<ul> di dalam <li>",
+      "<div> di dalam <p>"
+    ],
+    "answer": 3,
+    "explanation": "Tag <p> adalah elemen paragraf yang tidak boleh berisi elemen blok lain seperti <div>. Browser akan secara paksa menutup <p> sebelum <div>.",
+    "timeLimit": 25
+  },
+  {
+    "id": "c40",
+    "type": "predict-output",
+    "level": 2,
+    "lang": "html",
+    "prompt": "Pada elemen input ini, tombol apa yang akan muncul di layar?",
+    "code": "<input type='submit' value='Kirim Data'>",
+    "options": [
+      "Tombol bertuliskan 'Submit'",
+      "Tombol bertuliskan 'Kirim Data'",
+      "Input teks biasa dengan tulisan 'Kirim Data'",
+      "Form otomatis terkirim tanpa tombol"
+    ],
+    "answer": 1,
+    "explanation": "Input dengan type='submit' akan merender sebuah tombol. Teks pada tombol tersebut ditentukan oleh atribut 'value'.",
+    "timeLimit": 15
+  },
+  {
+    "id": "c41",
+    "type": "fix-bug",
+    "level": 2,
+    "lang": "html",
+    "prompt": "Checkbox tidak bisa diceklis secara otomatis (default) saat halaman dimuat. Atribut apa yang kurang?",
+    "code": "<input type='checkbox'>",
+    "options": [
+      "value='true'",
+      "selected",
+      "checked",
+      "required"
+    ],
+    "answer": 2,
+    "explanation": "Pada tipe input checkbox dan radio, atribut 'checked' digunakan untuk menandai opsi secara default ketika halaman dimuat.",
+    "timeLimit": 20
+  },
+  {
+    "id": "c42",
+    "type": "pairing",
+    "level": 1,
+    "lang": "html",
+    "prompt": "Apa fungsi utama dari tag <span>?",
+    "code": "<p>Teks <span style='color:red;'>merah</span>.</p>",
+    "options": [
+      "Membuat paragraf baru",
+      "Membungkus teks/elemen sebaris (inline) untuk keperluan styling",
+      "Membuat huruf tebal",
+      "Menambahkan garis bawah"
+    ],
+    "answer": 1,
+    "explanation": "Tag <span> adalah elemen inline netral yang digunakan untuk mengelompokkan teks atau bagian dokumen guna penataan gaya tanpa membuat baris baru.",
+    "timeLimit": 15
+  },
+  {
+    "id": "c43",
+    "type": "trace-path",
+    "level": 3,
+    "lang": "html",
+    "prompt": "Bagaimana struktur daftar ini diinterpretasikan?",
+    "code": "<ul>\n  <li>A</li>\n  <ul>\n    <li>B</li>\n  </ul>\n</ul>",
+    "options": [
+      "Valid dan menghasilkan daftar bersarang (B di bawah A)",
+      "Tidak valid karena <ul> bersarang langsung di dalam <ul>, bukan di dalam <li>",
+      "Hanya A yang dirender, B diabaikan",
+      "Error sintaks sehingga halaman crash"
+    ],
+    "answer": 1,
+    "explanation": "Secara semantik HTML, elemen anak dari <ul> hanya boleh berupa <li>. Untuk membuat daftar bersarang, <ul> baru harus berada di dalam tag <li>.",
+    "timeLimit": 25
+  },
+  {
+    "id": "c44",
+    "type": "predict-output",
+    "level": 1,
+    "lang": "html",
+    "prompt": "Dari tag heading h1-h6, mana yang ukuran font bawaannya paling KECIL?",
+    "code": "<h1>...</h1> sampai <h6>...</h6>",
+    "options": [
+      "<h1>",
+      "<h0>",
+      "<h6>",
+      "Semua ukurannya sama"
+    ],
+    "answer": 2,
+    "explanation": "Dalam HTML, <h1> adalah tingkat judul paling tinggi dengan ukuran terbesar, sedangkan <h6> adalah judul terendah dengan ukuran terkecil.",
+    "timeLimit": 15
+  },
+  {
+    "id": "c45",
+    "type": "fix-bug",
+    "level": 1,
+    "lang": "html",
+    "prompt": "Teks ini tidak tampil miring. Apa tag penutup yang salah?",
+    "code": "<em>Peringatan penting</im>",
+    "options": [
+      "Seharusnya </i>",
+      "Seharusnya </em>",
+      "Seharusnya </italic>",
+      "Seharusnya </strong>"
+    ],
+    "answer": 1,
+    "explanation": "Tag pembuka <em> harus diakhiri dengan tag penutup </em>. Penulisan </im> adalah salah ketik sehingga tag tidak tertutup.",
+    "timeLimit": 15
+  },
+  {
+    "id": "c46",
+    "type": "pairing",
+    "level": 3,
+    "lang": "html",
+    "prompt": "Manakah atribut yang digunakan pada tag <img> agar gambar memiliki teks alternatif jika gagal dimuat?",
+    "code": "<img src='logo.png' ...='Logo Perusahaan'>",
+    "options": [
+      "title",
+      "placeholder",
+      "alt",
+      "text"
+    ],
+    "answer": 2,
+    "explanation": "Atribut 'alt' memberikan deskripsi alternatif untuk gambar, yang sangat penting untuk aksesibilitas (screen reader) dan SEO.",
+    "timeLimit": 20
+  },
+  {
+    "id": "c47",
+    "type": "trace-path",
+    "level": 2,
+    "lang": "html",
+    "prompt": "Input dengan tipe apa yang biasanya merender sebuah elemen spinbox (tanda panah atas/bawah) pada UI bawaan browser?",
+    "code": "<input type='...'>",
+    "options": [
+      "text",
+      "number",
+      "email",
+      "radio"
+    ],
+    "answer": 1,
+    "explanation": "Input type='number' memberikan UI khusus berbentuk kontrol spinbox (panah atas dan bawah) untuk memudahkan mengubah angka.",
+    "timeLimit": 20
+  },
+  {
+    "id": "c48",
+    "type": "predict-output",
+    "level": 3,
+    "lang": "html",
+    "prompt": "Apa efek menambahkan atribut 'value' pada input type='checkbox' yang sedang dicentang?",
+    "code": "<input type='checkbox' value='Setuju' checked>",
+    "options": [
+      "Menampilkan kata 'Setuju' di samping kotak",
+      "Mengirimkan data 'Setuju' saat form disubmit",
+      "Checkbox tidak bisa dihapus centangnya",
+      "Mengubah fungsi checkbox menjadi tombol radio"
+    ],
+    "answer": 1,
+    "explanation": "Nilai atribut 'value' pada checkbox tidak tampil di UI, tetapi nilai tersebut yang akan dikirim ke server jika kotak dicentang dan disubmit.",
+    "timeLimit": 25
+  },
+  {
+    "id": "c49",
+    "type": "fix-bug",
+    "level": 2,
+    "lang": "html",
+    "prompt": "Komentar HTML ini muncul sebagai teks biasa di halaman. Bagaimana cara memperbaikinya?",
+    "code": "<-- Ini adalah catatan -->",
+    "options": [
+      "Ubah menjadi /* Ini adalah catatan */",
+      "Tambahkan tanda seru setelah kurung buka: <!--",
+      "Hapus tanda strip ganda",
+      "Gunakan tag <comment>"
+    ],
+    "answer": 1,
+    "explanation": "Sintaks komentar HTML yang benar harus diawali dengan <!-- (memiliki tanda seru) dan diakhiri dengan -->.",
+    "timeLimit": 20
   }
 ]
