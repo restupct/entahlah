@@ -579,6 +579,17 @@ pre {
 	text-align: center;
 }
 
+/* Kolom tim di ringkasan Tim A vs Tim B (teamsSummaryHtml). .is-mine menandai
+ * tim milik siswa yang sedang lihat, supaya "tim aku dapat berapa" langsung
+ * kelihatan tanpa harus mencocokkan nama sendiri di papan skor. */
+.team-col {
+	padding: 4px 10px;
+	border-radius: var(--radius);
+}
+.team-col.is-mine {
+	background: var(--blue-soft);
+}
+
 /* Grid dua kolom yang dulu di-toggle lewat JS matchMedia (mq/COLS/
  * applyStack) di host.html/play.html - sekarang murni CSS, jadi ikut
  * berubah otomatis saat rotasi layar tanpa listener JS. */

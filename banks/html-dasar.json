@@ -25,8 +25,8 @@
     "code": "<h1>Judul Artikel\n<p>Ini paragraf pembuka yang seharusnya berukuran normal.</p>",
     "options": [
       "Tag <h1> tidak pernah ditutup",
-      "Tag <p> salah penulisan",
       "Browser tidak mendukung <p>",
+      "Tag <p> salah penulisan",
       "Urutan tag terbalik"
     ],
     "answer": 0,
@@ -58,12 +58,12 @@
     "prompt": "Pasangkan tag dengan fungsinya",
     "code": "<a href=\"...\">teks</a>",
     "options": [
-      "Membuat tautan/link",
       "Membuat daftar bernomor",
       "Membuat tabel",
-      "Membuat kolom input"
+      "Membuat kolom input",
+      "Membuat tautan/link"
     ],
-    "answer": 0,
+    "answer": 3,
     "explanation": "Tag <a> (anchor) dengan atribut href dipakai untuk membuat tautan ke halaman atau alamat lain.",
     "timeLimit": 15
   },
@@ -75,12 +75,12 @@
     "prompt": "Elemen apa saja yang menjadi ANAK LANGSUNG dari <div class=\"card\">?",
     "code": "<div class=\"card\">\n  <h2>Judul</h2>\n  <p>Deskripsi <span>singkat</span></p>\n</div>",
     "options": [
-      "<h2> dan <p>",
-      "<h2>, <p>, dan <span>",
+      "<div> itu sendiri",
       "Hanya <span>",
-      "<div> itu sendiri"
+      "<h2> dan <p>",
+      "<h2>, <p>, dan <span>"
     ],
-    "answer": 0,
+    "answer": 2,
     "explanation": "Anak langsung adalah elemen satu level tepat di dalam <div>, yaitu <h2> dan <p>. <span> adalah cucu karena bersarang di dalam <p>.",
     "timeLimit": 25
   }

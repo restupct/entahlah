@@ -6,12 +6,12 @@
     "prompt": "Apa yang tercetak di console?",
     "code": "let nilai = 75;\nif (nilai >= 75) {\n  console.log('Lulus');\n} else {\n  console.log('Remedial');\n}",
     "options": [
-      "Lulus",
-      "Remedial",
       "Error",
-      "undefined"
+      "Lulus",
+      "undefined",
+      "Remedial"
     ],
-    "answer": 0,
+    "answer": 1,
     "explanation": "75 >= 75 bernilai true, jadi blok if yang dijalankan.",
     "timeLimit": 20
   },
@@ -24,8 +24,8 @@
     "options": [
       "A",
       "B",
-      "0",
-      "Error"
+      "Error",
+      "0"
     ],
     "answer": 1,
     "explanation": "Angka 0 itu falsy. Nilai falsy lain: string kosong, null, undefined, NaN, false.",
@@ -38,12 +38,12 @@
     "prompt": "Berapa pun isi x, kode ini selalu mencetak 'lima'. Kenapa?",
     "code": "let x = 3;\nif (x = 5) {\n  console.log('lima');\n}",
     "options": [
-      "Karena x memang sudah bernilai 5",
-      "Karena = mengisi nilai, bukan membandingkan",
       "Karena angka 5 tidak perlu tanda kutip",
-      "Karena if butuh else"
+      "Karena if butuh else",
+      "Karena x memang sudah bernilai 5",
+      "Karena = mengisi nilai, bukan membandingkan"
     ],
-    "answer": 1,
+    "answer": 3,
     "explanation": "x = 5 itu pengisian nilai: x diisi 5, lalu if menilai hasil pengisian itu, yaitu 5, dan 5 bersifat truthy. Perbandingan yang benar adalah x === 5.",
     "timeLimit": 25
   },
@@ -54,12 +54,12 @@
     "prompt": "Pasangkan kondisi dengan artinya",
     "code": "x % 2 === 0",
     "options": [
-      "Cek bilangan genap",
+      "Cek bilangan positif",
       "Cek bilangan ganjil",
       "Cek habis dibagi 3",
-      "Cek bilangan positif"
+      "Cek bilangan genap"
     ],
-    "answer": 0,
+    "answer": 3,
     "explanation": "Sisa bagi 2 sama dengan 0 artinya genap. Kalau hasilnya 1 berarti ganjil.",
     "timeLimit": 15
   },
@@ -70,12 +70,12 @@
     "prompt": "Untuk nilai = 82, cabang mana yang dieksekusi?",
     "code": "if (nilai >= 90)      grade = 'A';\nelse if (nilai >= 80) grade = 'B';\nelse if (nilai >= 70) grade = 'C';\nelse                  grade = 'D';",
     "options": [
-      "grade = 'A'",
       "grade = 'B'",
-      "grade = 'C'",
-      "grade = 'D'"
+      "grade = 'A'",
+      "grade = 'D'",
+      "grade = 'C'"
     ],
-    "answer": 1,
+    "answer": 0,
     "explanation": "82 gagal di >= 90, lolos di >= 80. Begitu satu cabang cocok, sisanya dilewati.",
     "timeLimit": 20
   },
@@ -86,12 +86,12 @@
     "prompt": "Apa outputnya?",
     "code": "console.log('5' == 5);\nconsole.log('5' === 5);",
     "options": [
-      "true, true",
       "true, false",
       "false, true",
-      "false, false"
+      "false, false",
+      "true, true"
     ],
-    "answer": 1,
+    "answer": 0,
     "explanation": "Operator == mengonversi tipe dulu (loose). Operator === membandingkan nilai DAN tipe (strict). Biasakan pakai ===.",
     "timeLimit": 20
   },
@@ -102,12 +102,12 @@
     "prompt": "Apa outputnya?",
     "code": "let hari = 'Sabtu';\nswitch (hari) {\n  case 'Sabtu':\n  case 'Minggu':\n    console.log('Libur');\n    break;\n  default:\n    console.log('Kerja');\n}",
     "options": [
+      "Error",
       "Libur",
       "Kerja",
-      "Libur lalu Kerja",
-      "Error"
+      "Libur lalu Kerja"
     ],
-    "answer": 0,
+    "answer": 1,
     "explanation": "Case tanpa break sengaja jatuh ke case berikutnya. Sabtu dan Minggu berbagi satu blok.",
     "timeLimit": 25
   },
@@ -118,12 +118,12 @@
     "prompt": "Kenapa Kerja ikut tercetak saat hari = Sabtu?",
     "code": "switch (hari) {\n  case 'Sabtu':\n    console.log('Libur');\n  default:\n    console.log('Kerja');\n}",
     "options": [
-      "switch tidak boleh string",
       "Kurang break",
       "default harus di atas",
-      "Kurang tanda kutip"
+      "Kurang tanda kutip",
+      "switch tidak boleh string"
     ],
-    "answer": 1,
+    "answer": 0,
     "explanation": "Tanpa break, eksekusi lanjut ke case di bawahnya. Ini disebut fall-through.",
     "timeLimit": 25
   },
@@ -134,12 +134,12 @@
     "prompt": "Apa nilai variabel status?",
     "code": "let umur = 17;\nlet status = umur >= 17 ? 'Dewasa' : 'Anak';",
     "options": [
-      "'Dewasa'",
       "'Anak'",
+      "undefined",
       "true",
-      "undefined"
+      "'Dewasa'"
     ],
-    "answer": 0,
+    "answer": 3,
     "explanation": "Ternary: kondisi ? nilaiJikaTrue : nilaiJikaFalse. Ringkas untuk if-else sederhana.",
     "timeLimit": 15
   },
@@ -150,12 +150,12 @@
     "prompt": "a = 5, b = 10. Apa yang tercetak?",
     "code": "if (a > 3) {\n  if (b > 20) console.log('P');\n  else console.log('Q');\n} else {\n  console.log('R');\n}",
     "options": [
+      "R",
       "P",
       "Q",
-      "R",
       "Tidak ada"
     ],
-    "answer": 1,
+    "answer": 2,
     "explanation": "a > 3 bernilai true, masuk blok luar. Di dalam, b > 20 false, jadi else dalam yang jalan.",
     "timeLimit": 25
   },
@@ -166,10 +166,10 @@
     "prompt": "Kondisi ini artinya apa?",
     "code": "nilai >= 0 && nilai <= 100",
     "options": [
-      "Nilai di luar 0-100",
+      "Selalu true",
       "Nilai antara 0 sampai 100",
-      "Nilai persis 0 atau 100",
-      "Selalu true"
+      "Nilai di luar 0-100",
+      "Nilai persis 0 atau 100"
     ],
     "answer": 1,
     "explanation": "Operator && butuh KEDUA sisi bernilai true. Ini pola standar validasi rentang.",
@@ -182,12 +182,12 @@
     "prompt": "Apa outputnya?",
     "code": "let a = false, b = true;\nif (a || b) console.log('X');\nif (a && b) console.log('Y');",
     "options": [
-      "X saja",
       "Y saja",
       "X dan Y",
-      "Tidak ada"
+      "Tidak ada",
+      "X saja"
     ],
-    "answer": 0,
+    "answer": 3,
     "explanation": "Operator || cukup salah satu true. Operator && harus dua-duanya true, sedangkan a bernilai false.",
     "timeLimit": 20
   },
@@ -198,10 +198,10 @@
     "prompt": "Kenapa semua nilai selalu dapat grade C?",
     "code": "if (nilai >= 70)      grade = 'C';\nelse if (nilai >= 80) grade = 'B';\nelse if (nilai >= 90) grade = 'A';",
     "options": [
-      "Kurang else terakhir",
+      "Operator salah",
       "Urutan kondisi terbalik",
-      "Harus pakai switch",
-      "Operator salah"
+      "Kurang else terakhir",
+      "Harus pakai switch"
     ],
     "answer": 1,
     "explanation": "Nilai 95 sudah cocok di >= 70 duluan, jadi berhenti di situ. Urutkan dari kondisi paling ketat.",
@@ -215,11 +215,11 @@
     "code": "let nama = '';\nif (nama) console.log('Halo ' + nama);\nelse console.log('Nama kosong');",
     "options": [
       "Halo",
+      "undefined",
       "Nama kosong",
-      "Error",
-      "undefined"
+      "Error"
     ],
-    "answer": 1,
+    "answer": 2,
     "explanation": "String kosong itu falsy, jadi eksekusi masuk ke blok else.",
     "timeLimit": 20
   },
@@ -230,12 +230,12 @@
     "prompt": "usia = 15, punyaSIM = false. Apa hasilnya?",
     "code": "if (usia >= 17 && punyaSIM) {\n  console.log('Boleh nyetir');\n} else if (usia >= 17) {\n  console.log('Urus SIM dulu');\n} else {\n  console.log('Belum cukup umur');\n}",
     "options": [
-      "Boleh nyetir",
-      "Urus SIM dulu",
       "Belum cukup umur",
-      "Tidak ada output"
+      "Tidak ada output",
+      "Boleh nyetir",
+      "Urus SIM dulu"
     ],
-    "answer": 2,
+    "answer": 0,
     "explanation": "Kondisi 1 dan 2 sama-sama gagal karena usia kurang dari 17, jadi jatuh ke else terakhir.",
     "timeLimit": 25
   },
@@ -246,12 +246,12 @@
     "prompt": "Apa outputnya?",
     "code": "let x = 10;\nif (x > 5)\n  console.log('A');\n  console.log('B');",
     "options": [
+      "A dan B",
       "A saja",
       "B saja",
-      "A dan B",
       "Error"
     ],
-    "answer": 2,
+    "answer": 0,
     "explanation": "Tanpa kurung kurawal, if hanya mengikat SATU statement. Baris B selalu jalan. Indentasi menipu!",
     "timeLimit": 30
   },
@@ -262,12 +262,12 @@
     "prompt": "Padanan singkat dari kode ini?",
     "code": "if (isLogin) {\n  tampil = 'Dashboard';\n} else {\n  tampil = 'Login';\n}",
     "options": [
-      "tampil = isLogin ? 'Dashboard' : 'Login'",
-      "tampil = isLogin && 'Dashboard'",
+      "tampil = 'Dashboard' || 'Login'",
       "switch (isLogin) { }",
-      "tampil = 'Dashboard' || 'Login'"
+      "tampil = isLogin ? 'Dashboard' : 'Login'",
+      "tampil = isLogin && 'Dashboard'"
     ],
-    "answer": 0,
+    "answer": 2,
     "explanation": "Ternary adalah bentuk ringkas if-else yang menghasilkan sebuah nilai.",
     "timeLimit": 25
   },
@@ -279,11 +279,11 @@
     "code": "let harga = null;\nlet final = harga ?? 0;\nconsole.log(final);",
     "options": [
       "null",
+      "Error",
       "0",
-      "undefined",
-      "Error"
+      "undefined"
     ],
-    "answer": 1,
+    "answer": 2,
     "explanation": "Operator ?? hanya menangkap null dan undefined, tidak seperti || yang juga menangkap 0 dan string kosong.",
     "timeLimit": 25
   }

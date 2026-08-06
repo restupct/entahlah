@@ -80,6 +80,10 @@ const MIME = {
 	'.json': 'application/json; charset=utf-8',
 	'.svg': 'image/svg+xml',
 	'.ico': 'image/x-icon',
+	// Buat file suara reveal (public/sounds/true.mp3 & false.mp3).
+	'.mp3': 'audio/mpeg',
+	'.ogg': 'audio/ogg',
+	'.wav': 'audio/wav',
 }
 
 function lanAddresses() {

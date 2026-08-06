@@ -168,20 +168,47 @@ export function leaderboardRowsHtml(list, { highlightPid = null, showTeam = fals
 		.join('')
 }
 
-/** Render ringkasan skor Tim A vs Tim B. */
-export function teamsSummaryHtml(teams) {
+/**
+ * Render ringkasan skor Tim A vs Tim B.
+ * - `highlightTeam` ('A'/'B'): tandai kolom tim itu sebagai "punya kamu" -
+ *   dipakai play.html supaya siswa langsung tahu tim mana dirinya, tidak
+ *   cuma dua angka polos tanpa konteks.
+ * - `final`: kalau true, tambah baris "Tim X menang!"/"Seri!" di bawah -
+ *   dipakai untuk hasil akhir (host & play), TIDAK dipakai untuk papan skor
+ *   tim yang masih berjalan supaya tidak menyiratkan game sudah selesai.
+ * Tim yang unggul selalu ditandai mahkota, baik saat masih berjalan
+ * ("sementara unggul") maupun di hasil akhir.
+ */
+export function teamsSummaryHtml(teams, { highlightTeam = null, final = false } = {}) {
 	if (!teams) return ''
+	const tie = teams.A === teams.B
+	const leader = tie ? null : teams.A > teams.B ? 'A' : 'B'
+	function col(name, score) {
+		const mine = highlightTeam === name
+		return (
+			'<div class="team-col' +
+			(mine ? ' is-mine' : '') +
+			(name === 'B' ? ' text-right' : '') +
+			'"><div class="label m-0">Tim ' +
+			name +
+			(leader === name ? ' \u{1F451}' : '') +
+			(mine ? ' <span class="muted">(kamu)</span>' : '') +
+			'</div><div class="lb-score text-2xl">' +
+			score +
+			'</div></div>'
+		)
+	}
 	return (
 		'<div class="card row between">' +
-		'<div><div class="label m-0">Tim A</div>' +
-		'<div class="lb-score text-2xl">' +
-		teams.A +
-		'</div></div>' +
+		col('A', teams.A) +
 		'<span class="muted">vs</span>' +
-		'<div class="text-right"><div class="label m-0">Tim B</div>' +
-		'<div class="lb-score text-2xl">' +
-		teams.B +
-		'</div></div></div>'
+		col('B', teams.B) +
+		'</div>' +
+		(final
+			? '<p class="text-center muted text-small mt-1 m-0">' +
+				(tie ? 'Seri!' : 'Tim ' + leader + ' menang!') +
+				'</p>'
+			: '')
 	)
 }
 

@@ -77,6 +77,7 @@
 								<div id="pMark" class="result-mark">-</div>
 								<h2 id="pVerdict" class="text-xl">-</h2>
 								<div class="lb-score text-2xl" id="pPoints">+0</div>
+								<div id="pBreakdown" class="stack gap-1 hidden"></div>
 								<div class="row justify-center gap-3">
 									<span class="pill" id="pRank">-</span>
 									<span class="pill" id="pStreak">-</span>
@@ -105,6 +106,7 @@
 					<h1 class="page-title">Hasil akhir</h1>
 				</div>
 				<div class="card stack" id="eMine"></div>
+				<div id="eTeams"></div>
 				<div class="card"><div class="lb" id="eBoard"></div></div>
 			</section>
 		</div>
@@ -119,12 +121,39 @@
 				startTimer,
 				optionButtonsHtml,
 				leaderboardRowsHtml,
+				teamsSummaryHtml,
 			} from '/js/common.js'
 
 			let joined = false
 			let stopTimer = null
 			let current = null
 			let myPid = localStorage.getItem('bb_pid') || null
+
+			// Suara saat jawaban dibuka: benar -> true.mp3, salah/tidak menjawab
+			// -> false.mp3. File-nya ditaruh di public/sounds/ (lihat README di
+			// folder itu). "Unlock" sekali lewat gesture pengguna supaya HP
+			// (terutama iOS Safari) tidak memblokir play() otomatis nanti saat
+			// reveal - saat itu tidak ada klik baru dari siswa.
+			const sndTrue = new Audio('/sounds/true.mp3')
+			const sndFalse = new Audio('/sounds/false.mp3')
+			let audioUnlocked = false
+			function unlockAudio() {
+				if (audioUnlocked) return
+				audioUnlocked = true
+				for (const a of [sndTrue, sndFalse]) {
+					a.play()
+						.then(() => {
+							a.pause()
+							a.currentTime = 0
+						})
+						.catch(() => {})
+				}
+			}
+			function playResultSound(correct) {
+				const a = correct ? sndTrue : sndFalse
+				a.currentTime = 0
+				a.play().catch(() => {})
+			}
 
 			el('fCode').value = localStorage.getItem('bb_code') || ''
 			el('fName').value = localStorage.getItem('bb_name') || ''
@@ -160,6 +189,7 @@
 			}
 
 			el('btnJoin').onclick = () => {
+				unlockAudio()
 				const code = el('fCode').value.trim().toUpperCase()
 				const name = el('fName').value.trim()
 				if (code.length !== 4 || !name) {
@@ -187,14 +217,18 @@
 			}
 
 			function pick(i) {
+				// current.locked cuma jadi true kalau waktu habis atau jawaban
+				// sudah dibuka (lihat onDone timer & handler 'result') - selama
+				// belum itu, siswa bebas ganti pilihan berkali-kali.
 				if (!current || current.locked) return
-				current.locked = true
+				unlockAudio()
+				current.chosen = i
 				sock.send({ t: 'player:answer', choice: i })
 				for (const b of el('pOpts').children) {
-					b.disabled = true
 					b.classList.toggle('is-picked', Number(b.dataset.i) === i)
 				}
-				el('pHint').textContent = 'Jawaban terkirim. Tunggu peserta lain...'
+				el('pHint').textContent =
+					'Jawaban tersimpan: ' + LETTERS[i] + '. Masih bisa diganti sebelum waktu habis.'
 			}
 
 			document.addEventListener('keydown', (e) => {
@@ -256,13 +290,16 @@
 						},
 					})
 				} else if (m.t === 'ack') {
-					if (current) current.locked = true
+					// Cuma konfirmasi pilihan mana yang tersimpan di server saat ini -
+					// TIDAK mengunci tombol, supaya siswa masih bisa ganti pilihan.
 					for (const b of el('pOpts').children) {
-						b.disabled = true
 						b.classList.toggle('is-picked', Number(b.dataset.i) === m.choice)
 					}
 				} else if (m.t === 'result') {
 					stopTimer?.()
+					if (current) current.locked = true
+					for (const b of el('pOpts').children) b.disabled = true
+					playResultSound(!!(m.answered && m.correct))
 					el('pFlip').classList.add('is-flipped')
 					el('pScore').textContent = m.score
 					if (current) {
@@ -291,6 +328,27 @@
 							? 'Benar!'
 							: 'Belum tepat'
 					el('pPoints').textContent = '+' + m.points
+					if (m.answered && m.correct && m.breakdown) {
+						const secs = ((m.ms || 0) / 1000).toFixed(1)
+						el('pBreakdown').classList.remove('hidden')
+						el('pBreakdown').innerHTML =
+							'<div class="row between text-small"><span class="muted">Poin dasar (jawaban benar)</span><strong>+' +
+							m.breakdown.base +
+							'</strong></div>' +
+							'<div class="row between text-small"><span class="muted">Bonus cepat (jawab dlm ' +
+							secs +
+							' dtk)</span><strong>+' +
+							m.breakdown.speedBonus +
+							'</strong></div>' +
+							(m.breakdown.streakBonus > 0
+								? '<div class="row between text-small"><span class="muted">Bonus beruntun</span><strong>+' +
+									m.breakdown.streakBonus +
+									'</strong></div>'
+								: '')
+					} else {
+						el('pBreakdown').classList.add('hidden')
+						el('pBreakdown').innerHTML = ''
+					}
 					el('pRank').textContent = 'Peringkat ' + (m.rank || '-') + ' dari ' + m.of
 					el('pStreak').textContent =
 						m.streak > 1 ? m.streak + ' benar beruntun' : 'Total ' + m.score
@@ -300,7 +358,9 @@
 					const me = m.leaderboard.find((p) => p.pid === myPid)
 					el('eMine').innerHTML = me
 						? '<div class="text-center">' +
-							'<div class="label">Peringkat kamu</div>' +
+							'<div class="label">Peringkat kamu' +
+							(me.team ? ' &middot; Tim ' + me.team : '') +
+							'</div>' +
 							'<div class="code-display code-display--compact">#' +
 							me.rank +
 							'</div>' +
@@ -312,8 +372,16 @@
 							m.total +
 							' benar</div></div>'
 						: ''
+					// Tim kamu + total skor tim - dulu tidak ditampilkan sama sekali
+					// di layar siswa, jadi siswa cuma lihat skor pribadi tanpa tahu
+					// timnya menang/kalah atau totalnya berapa.
+					el('eTeams').innerHTML = teamsSummaryHtml(m.teams, {
+						highlightTeam: me ? me.team : null,
+						final: true,
+					})
 					el('eBoard').innerHTML = leaderboardRowsHtml(m.leaderboard, {
 						highlightPid: myPid,
+						showTeam: !!m.teams,
 					})
 				}
 			}

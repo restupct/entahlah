@@ -106,6 +106,7 @@
 									<div class="stack gap-5">
 										<h2 id="gAnswer" class="text-2xl">-</h2>
 										<p id="gWhy" class="muted m-0">-</p>
+										<div id="gFastest" class="stack gap-1"></div>
 										<div class="stack gap-3" id="gStats"></div>
 									</div>
 								</div>
@@ -256,8 +257,8 @@
 					el(id).classList.toggle('hidden', id !== which)
 			}
 
-			function renderTeams(node, teams) {
-				node.innerHTML = teamsSummaryHtml(teams)
+			function renderTeams(node, teams, opts) {
+				node.innerHTML = teamsSummaryHtml(teams, opts)
 			}
 
 			function onMessage(m) {
@@ -334,6 +335,27 @@
 					el('gBackPrompt').textContent = current.prompt
 					el('gBackCode').innerHTML = highlight(current.code, current.lang)
 
+					// Transparansi ke seluruh kelas: siapa yang paling cepat DAN benar,
+					// lengkap dengan waktu jawabnya - biar kalau ada yang ngerasa
+					// "harusnya aku lebih cepat", semua bisa cek langsung angkanya.
+					el('gFastest').innerHTML =
+						m.fastest && m.fastest.length
+							? '<div class="label m-0">Tercepat jawab benar</div>' +
+								m.fastest
+									.map(
+										(f, i) =>
+											'<div class="row between text-small"><span>' +
+											(i + 1) +
+											'. ' +
+											escapeHtml(f.name) +
+											(f.team ? ' (Tim ' + f.team + ')' : '') +
+											'</span><strong>' +
+											(f.ms / 1000).toFixed(1) +
+											' dtk</strong></div>',
+									)
+									.join('')
+							: '<p class="muted text-small m-0">Belum ada yang menjawab benar.</p>'
+
 					const total = Math.max(1, m.responders)
 					el('gStats').innerHTML = current.options
 						.map((o, i) => {
@@ -375,7 +397,7 @@
 					stopTimer?.()
 					show('end')
 					el('eBoard').innerHTML = leaderboardRowsHtml(m.leaderboard, { showTeam: true })
-					renderTeams(el('eTeams'), m.teams)
+					renderTeams(el('eTeams'), m.teams, { final: true })
 				}
 			}
 		</script>

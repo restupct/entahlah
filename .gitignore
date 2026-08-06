@@ -1,7 +1,15 @@
+# Dependencies (install ulang pakai `npm install`)
 node_modules/
 npm-debug.log*
+
+# Screenshot bukti dari test Playwright
 test/*.png
 
+# --- Bank soal ---
+# Bank bawaan (js-dasar.json, html-dasar.json) TETAP ikut commit seperti biasa.
+# Tapi kalau nanti nambah file bank baru (mis. banks/sql-dasar.json) untuk
+# draft/eksperimen, file itu otomatis di-ignore git dan TIDAK ikut ke-commit
+# sampai kamu sengaja unwhitelist-nya di bawah ini.
 banks/*
 !banks/js-dasar.json
 !banks/html-dasar.json
