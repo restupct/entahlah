@@ -422,6 +422,19 @@ pre {
 	color: var(--muted);
 }
 
+/* Baris peserta dengan dropdown pindah-tim manual (lihat host.html) - butuh
+   satu kolom ekstra dibanding .lb-row biasa (rank | nama | pilih tim | skor). */
+.roster-row {
+	grid-template-columns: 28px 1fr auto auto;
+}
+
+.team-select {
+	width: auto;
+	min-height: 36px;
+	padding: 4px 10px;
+	font-size: var(--fs-tiny);
+}
+
 .code-display {
 	font-family: var(--mono);
 	font-size: clamp(32px, 7vw, 56px);

@@ -39,8 +39,26 @@
 						</div>
 						<label class="toggle">
 							<input type="checkbox" id="optTeam" />
-							<span>Mode tim (Tim A vs Tim B)</span>
+							<span>Mode tim (bagi peserta ke beberapa tim)</span>
 						</label>
+						<div id="teamModeExtra" class="stack gap-3 hidden">
+							<div>
+								<span class="label">Jumlah tim</span>
+								<select class="input" id="optTeamCount">
+									<option value="2">2 tim</option>
+									<option value="3">3 tim</option>
+									<option value="4">4 tim</option>
+									<option value="5">5 tim</option>
+									<option value="6">6 tim</option>
+								</select>
+							</div>
+							<button class="btn btn-block" id="btnShuffleTeams" type="button">
+								Kocok ulang tim
+							</button>
+							<p class="muted text-small m-0">
+								Atur tim tiap siswa langsung di daftar Peserta di samping.
+							</p>
+						</div>
 						<label class="toggle">
 							<input type="checkbox" id="optShuffle" checked />
 							<span>Acak urutan soal</span>
@@ -221,6 +239,7 @@
 				return {
 					bank: el('optBank').value,
 					teamMode: el('optTeam').checked,
+					teamCount: Number(el('optTeamCount').value) || 2,
 					shuffle: el('optShuffle').checked,
 					count: Number(el('optCount').value) || 10,
 					types: [...picked],
@@ -230,8 +249,73 @@
 				sock.send({ t: 'host:options', options: readOptions() })
 			}
 
-			for (const id of ['optBank', 'optTeam', 'optShuffle', 'optCount'])
+			for (const id of ['optBank', 'optTeam', 'optTeamCount', 'optShuffle', 'optCount'])
 				el(id).addEventListener('change', pushOptions)
+
+			// Tampilkan/sembunyikan panel "Jumlah tim" + tombol kocok ulang cuma
+			// saat mode tim menyala - dulu opsi ini tidak ada sama sekali.
+			el('optTeam').addEventListener('change', () => {
+				el('teamModeExtra').classList.toggle('hidden', !el('optTeam').checked)
+			})
+
+			el('btnShuffleTeams').addEventListener('click', () => {
+				sock.send({ t: 'host:shuffleTeams' })
+			})
+
+			// Delegasi: dropdown tim per siswa ada di dalam #roster, dibuat ulang
+			// tiap kali roster berubah - jadi listener-nya dipasang sekali di sini
+			// pada elemen induknya, bukan per-<select>.
+			el('roster').addEventListener('change', (e) => {
+				const sel = e.target.closest('.team-select')
+				if (!sel) return
+				sock.send({ t: 'host:setTeam', pid: sel.dataset.pid, team: sel.value })
+			})
+
+			function renderRoster(m) {
+				el('count').textContent = m.players.length
+				el('start').disabled = m.players.length === 0
+				if (m.teamMode && m.teams) {
+					const letters = Object.keys(m.teams)
+					el('roster').innerHTML = m.players.length
+						? m.players
+								.map((p) => {
+									const opts = letters
+										.map(
+											(l) =>
+												'<option value="' +
+												l +
+												'"' +
+												(p.team === l ? ' selected' : '') +
+												'>Tim ' +
+												l +
+												'</option>',
+										)
+										.join('')
+									return (
+										'<div class="lb-row roster-row' +
+										(p.online === false ? ' off' : '') +
+										'"><span class="lb-rank">' +
+										p.rank +
+										'</span><span class="lb-name">' +
+										escapeHtml(p.name) +
+										(p.online === false
+											? ' <span class="muted">(offline)</span>'
+											: '') +
+										'</span><select class="input team-select" data-pid="' +
+										p.pid +
+										'">' +
+										opts +
+										'</select><span class="lb-score">' +
+										p.score +
+										'</span></div>'
+									)
+								})
+								.join('')
+						: '<p class="muted m-0 text-small">Menunggu siswa bergabung...</p>'
+				} else {
+					el('roster').innerHTML = leaderboardRowsHtml(m.players, { showTeam: false })
+				}
+			}
 
 			el('start').onclick = () => {
 				pushOptions()
@@ -281,6 +365,9 @@
 					}
 					el('optBank').value = m.options.bank
 					el('optCount').max = m.available
+					el('optTeam').checked = !!m.options.teamMode
+					el('optTeamCount').value = m.options.teamCount || 2
+					el('teamModeExtra').classList.toggle('hidden', !m.options.teamMode)
 					el('urls').innerHTML = m.joinUrls.length
 						? m.joinUrls
 								.map(
@@ -293,9 +380,7 @@
 					sessionStorage.removeItem('bb_host_code')
 					sock.send({ t: 'host:create', options: readOptions() })
 				} else if (m.t === 'roster') {
-					el('count').textContent = m.players.length
-					el('start').disabled = m.players.length === 0
-					el('roster').innerHTML = leaderboardRowsHtml(m.players, { showTeam: true })
+					renderRoster(m)
 					el('gBoard').innerHTML = leaderboardRowsHtml(m.players.slice(0, 8), {
 						showTeam: true,
 					})

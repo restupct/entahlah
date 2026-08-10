@@ -169,47 +169,88 @@ export function leaderboardRowsHtml(list, { highlightPid = null, showTeam = fals
 }
 
 /**
- * Render ringkasan skor Tim A vs Tim B.
- * - `highlightTeam` ('A'/'B'): tandai kolom tim itu sebagai "punya kamu" -
- *   dipakai play.html supaya siswa langsung tahu tim mana dirinya, tidak
- *   cuma dua angka polos tanpa konteks.
+ * Render ringkasan skor tim - sekarang generik untuk berapa pun jumlah tim
+ * (dulu selalu tepat 2, hardcode Tim A vs Tim B).
+ * - `highlightTeam`: tandai tim itu sebagai "punya kamu" - dipakai play.html
+ *   supaya siswa langsung tahu tim mana dirinya, tidak cuma angka polos.
  * - `final`: kalau true, tambah baris "Tim X menang!"/"Seri!" di bawah -
  *   dipakai untuk hasil akhir (host & play), TIDAK dipakai untuk papan skor
  *   tim yang masih berjalan supaya tidak menyiratkan game sudah selesai.
  * Tim yang unggul selalu ditandai mahkota, baik saat masih berjalan
- * ("sementara unggul") maupun di hasil akhir.
+ * ("sementara unggul") maupun di hasil akhir. Untuk tepat 2 tim, tampilan
+ * "A vs B" klasik dipertahankan. Untuk 3+ tim, ditampilkan sebagai papan
+ * peringkat mini (tim skor tertinggi di atas) supaya tetap mudah dibaca.
  */
 export function teamsSummaryHtml(teams, { highlightTeam = null, final = false } = {}) {
 	if (!teams) return ''
-	const tie = teams.A === teams.B
-	const leader = tie ? null : teams.A > teams.B ? 'A' : 'B'
-	function col(name, score) {
-		const mine = highlightTeam === name
+	const entries = Object.entries(teams)
+	if (entries.length < 2) return ''
+	const max = Math.max(...entries.map(([, s]) => s))
+	const allTie = entries.every(([, s]) => s === max)
+	const leaders = allTie ? [] : entries.filter(([, s]) => s === max).map(([n]) => n)
+
+	function teamLabel(name, mine) {
 		return (
-			'<div class="team-col' +
-			(mine ? ' is-mine' : '') +
-			(name === 'B' ? ' text-right' : '') +
-			'"><div class="label m-0">Tim ' +
+			'Tim ' +
 			name +
-			(leader === name ? ' \u{1F451}' : '') +
-			(mine ? ' <span class="muted">(kamu)</span>' : '') +
-			'</div><div class="lb-score text-2xl">' +
-			score +
-			'</div></div>'
+			(leaders.includes(name) ? ' \u{1F451}' : '') +
+			(mine ? ' <span class="muted">(kamu)</span>' : '')
 		)
 	}
-	return (
-		'<div class="card row between">' +
-		col('A', teams.A) +
-		'<span class="muted">vs</span>' +
-		col('B', teams.B) +
-		'</div>' +
-		(final
-			? '<p class="text-center muted text-small mt-1 m-0">' +
-				(tie ? 'Seri!' : 'Tim ' + leader + ' menang!') +
-				'</p>'
-			: '')
-	)
+
+	let body
+	if (entries.length === 2) {
+		const [[nameA, scoreA], [nameB, scoreB]] = entries
+		function col(name, score) {
+			const mine = highlightTeam === name
+			return (
+				'<div class="team-col' +
+				(mine ? ' is-mine' : '') +
+				(name === nameB ? ' text-right' : '') +
+				'"><div class="label m-0">' +
+				teamLabel(name, mine) +
+				'</div><div class="lb-score text-2xl">' +
+				score +
+				'</div></div>'
+			)
+		}
+		body =
+			'<div class="card row between">' +
+			col(nameA, scoreA) +
+			'<span class="muted">vs</span>' +
+			col(nameB, scoreB) +
+			'</div>'
+	} else {
+		const ranked = entries.slice().sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0]))
+		body =
+			'<div class="card lb">' +
+			ranked
+				.map(([name, score]) => {
+					const mine = highlightTeam === name
+					return (
+						'<div class="lb-row' +
+						(mine ? ' top' : '') +
+						'"><span class="lb-name">' +
+						teamLabel(name, mine) +
+						'</span><span class="lb-score">' +
+						score +
+						'</span></div>'
+					)
+				})
+				.join('') +
+			'</div>'
+	}
+
+	let finalLine = ''
+	if (final) {
+		const msg = allTie
+			? 'Seri!'
+			: leaders.length > 1
+				? 'Tim ' + leaders.join(' & ') + ' seri di posisi puncak!'
+				: 'Tim ' + leaders[0] + ' menang!'
+		finalLine = '<p class="text-center muted text-small mt-1 m-0">' + msg + '</p>'
+	}
+	return body + finalLine
 }
 
 /** Countdown berbasis waktu asli (bukan hitungan tick) supaya tidak melenceng. */
