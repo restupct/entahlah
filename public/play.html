@@ -122,22 +122,30 @@
 				optionButtonsHtml,
 				leaderboardRowsHtml,
 				teamsSummaryHtml,
+				unlockSfx,
+				sfxTick,
+				sfxFanfare,
+				confettiBurst,
 			} from '/js/common.js'
 
 			let joined = false
 			let stopTimer = null
 			let current = null
+			let lastTick = 0
 			let myPid = localStorage.getItem('bb_pid') || null
 
 			// Suara saat jawaban dibuka: benar -> true.mp3, salah/tidak menjawab
 			// -> false.mp3. File-nya ditaruh di public/sounds/ (lihat README di
 			// folder itu). "Unlock" sekali lewat gesture pengguna supaya HP
 			// (terutama iOS Safari) tidak memblokir play() otomatis nanti saat
-			// reveal - saat itu tidak ada klik baru dari siswa.
+			// reveal - saat itu tidak ada klik baru dari siswa. unlockSfx()
+			// sekalian membuka AudioContext untuk tick countdown & fanfare
+			// (bunyi synthesize Web Audio, tanpa file - lihat common.js).
 			const sndTrue = new Audio('/sounds/true.mp3')
 			const sndFalse = new Audio('/sounds/false.mp3')
 			let audioUnlocked = false
 			function unlockAudio() {
+				unlockSfx()
 				if (audioUnlocked) return
 				audioUnlocked = true
 				for (const a of [sndTrue, sndFalse]) {
@@ -259,6 +267,7 @@
 					show('wait')
 				} else if (m.t === 'card') {
 					current = Object.assign({}, m, { locked: false })
+					lastTick = 0
 					show('game')
 					el('pFlip').classList.remove('is-flipped')
 					el('pType').textContent = m.typeLabel
@@ -280,6 +289,14 @@
 							t.firstElementChild.style.width = frac * 100 + '%'
 							t.className =
 								'timer' + (frac < 0.2 ? ' danger' : frac < 0.5 ? ' warn' : '')
+							// Bunyi "tuk" sekali per detik di 5 detik terakhir -
+							// lastTick mencegah bunyi dobel karena onTick dipanggil
+							// tiap 100ms, bukan tiap detik.
+							const s = Math.ceil(left)
+							if (s <= 5 && s > 0 && s !== lastTick) {
+								lastTick = s
+								sfxTick()
+							}
 						},
 						onDone: () => {
 							if (current && !current.locked) {
@@ -300,6 +317,9 @@
 					if (current) current.locked = true
 					for (const b of el('pOpts').children) b.disabled = true
 					playResultSound(!!(m.answered && m.correct))
+					// Confetti kecil di HP sendiri kalau jawabannya benar - rasanya
+					// lebih personal daripada cuma lihat confetti di proyektor.
+					if (m.answered && m.correct) confettiBurst()
 					el('pFlip').classList.add('is-flipped')
 					el('pScore').textContent = m.score
 					if (current) {
@@ -351,11 +371,14 @@
 					}
 					el('pRank').textContent = 'Peringkat ' + (m.rank || '-') + ' dari ' + m.of
 					el('pStreak').textContent =
-						m.streak > 1 ? m.streak + ' benar beruntun' : 'Total ' + m.score
+						m.streak > 1 ? '🔥 ' + m.streak + ' benar beruntun' : 'Total ' + m.score
 				} else if (m.t === 'end') {
 					stopTimer?.()
 					show('end')
 					const me = m.leaderboard.find((p) => p.pid === myPid)
+					// Fanfare untuk semua, confetti besar khusus yang finis 3 besar.
+					sfxFanfare()
+					if (me && me.rank <= 3) confettiBurst(true)
 					el('eMine').innerHTML = me
 						? '<div class="text-center">' +
 							'<div class="label">Peringkat kamu' +
