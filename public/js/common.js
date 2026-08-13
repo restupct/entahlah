@@ -142,7 +142,9 @@ export function optionButtonsHtml(options, { tag = 'div', selectable = false } =
 /**
  * Render daftar baris papan skor. Dipakai oleh host.html (roster + papan
  * skor) dan play.html (papan skor akhir), dengan opsi menyorot satu pid
- * (mis. skor milik peserta yang sedang lihat).
+ * (mis. skor milik peserta yang sedang lihat). Pemain dengan 3+ jawaban
+ * benar beruntun mendapat tanda api di samping namanya - bikin kelas
+ * heboh saat ada yang "on fire".
  */
 export function leaderboardRowsHtml(list, { highlightPid = null, showTeam = false } = {}) {
 	if (!list.length) return '<p class="muted m-0 text-small">Belum ada peserta.</p>'
@@ -158,6 +160,7 @@ export function leaderboardRowsHtml(list, { highlightPid = null, showTeam = fals
 				p.rank +
 				'</span><span class="lb-name">' +
 				escapeHtml(p.name) +
+				(p.streak >= 3 ? ' 🔥' : '') +
 				(showTeam && p.team ? ' <span class="muted">&middot; Tim ' + p.team + '</span>' : '') +
 				(offline ? ' <span class="muted">(offline)</span>' : '') +
 				'</span><span class="lb-score">' +
@@ -260,6 +263,106 @@ export function teamsSummaryHtml(teams, { highlightTeam = null, final = false } 
 		finalLine = '<p class="text-center muted text-small mt-1 m-0">' + msg + '</p>'
 	}
 	return body + finalLine
+}
+
+/* ===== Efek suara via Web Audio API - tanpa file audio sama sekali =====
+ * File mp3 di public/sounds/ tetap dipakai play.html untuk reveal benar/
+ * salah; modul ini melengkapi dengan bunyi yang tidak butuh file: tick
+ * countdown 5 detik terakhir, jingle reveal, dan fanfare hasil akhir.
+ * Semuanya di-synthesize dari oscillator, jadi tetap 100% jalan offline
+ * di WiFi lokal. AudioContext baru boleh berbunyi setelah ada gesture
+ * pengguna (kebijakan browser) - makanya unlockSfx() dipanggil dari
+ * interaksi pertama (klik/tombol) di tiap halaman. */
+let _actx = null
+
+export function unlockSfx() {
+	try {
+		if (!_actx) _actx = new (window.AudioContext || window.webkitAudioContext)()
+		if (_actx.state === 'suspended') _actx.resume()
+	} catch {}
+}
+
+function beep(freq, startAt, dur, { type = 'square', vol = 0.08 } = {}) {
+	if (!_actx) return
+	try {
+		const osc = _actx.createOscillator()
+		const gain = _actx.createGain()
+		osc.type = type
+		osc.frequency.value = freq
+		const t0 = _actx.currentTime + startAt
+		gain.gain.setValueAtTime(vol, t0)
+		gain.gain.exponentialRampToValueAtTime(0.0001, t0 + dur)
+		osc.connect(gain).connect(_actx.destination)
+		osc.start(t0)
+		osc.stop(t0 + dur)
+	} catch {}
+}
+
+/** Bunyi "tuk" singkat - dipanggil sekali per detik di 5 detik terakhir timer. */
+export function sfxTick() {
+	beep(880, 0, 0.07)
+}
+
+/** Jingle dua nada saat jawaban dibuka. */
+export function sfxReveal() {
+	beep(523, 0, 0.12)
+	beep(784, 0.1, 0.18)
+}
+
+/** Fanfare kecil (arpeggio naik) untuk layar hasil akhir. */
+export function sfxFanfare() {
+	beep(523, 0, 0.14)
+	beep(659, 0.14, 0.14)
+	beep(784, 0.28, 0.14)
+	beep(1047, 0.42, 0.3, { vol: 0.1 })
+}
+
+/**
+ * Hujan confetti satu kali - canvas fullscreen vanilla (tanpa library,
+ * tetap offline), membersihkan dirinya sendiri setelah ~2.6 detik.
+ * `big = true` untuk momen besar (hasil akhir / podium): lebih banyak
+ * partikel dan jatuh lebih lama.
+ */
+export function confettiBurst(big = false) {
+	try {
+		const cv = document.createElement('canvas')
+		const ctx = cv.getContext('2d')
+		if (!ctx) return
+		cv.style.cssText =
+			'position:fixed;inset:0;width:100vw;height:100vh;pointer-events:none;z-index:999'
+		cv.width = window.innerWidth
+		cv.height = window.innerHeight
+		document.body.appendChild(cv)
+		const colors = ['#2783de', '#46a171', '#d5803b', '#e56458', '#f4bf4f', '#a78bfa']
+		const parts = Array.from({ length: big ? 220 : 120 }, () => ({
+			x: Math.random() * cv.width,
+			y: -20 - Math.random() * cv.height * 0.4,
+			w: 6 + Math.random() * 6,
+			h: 8 + Math.random() * 8,
+			vy: 2 + Math.random() * 3,
+			vx: -1.5 + Math.random() * 3,
+			rot: Math.random() * Math.PI,
+			vr: -0.1 + Math.random() * 0.2,
+			color: colors[(Math.random() * colors.length) | 0],
+		}))
+		const t0 = performance.now()
+		;(function frame(t) {
+			ctx.clearRect(0, 0, cv.width, cv.height)
+			for (const p of parts) {
+				p.x += p.vx
+				p.y += p.vy
+				p.rot += p.vr
+				ctx.save()
+				ctx.translate(p.x, p.y)
+				ctx.rotate(p.rot)
+				ctx.fillStyle = p.color
+				ctx.fillRect(-p.w / 2, -p.h / 2, p.w, p.h)
+				ctx.restore()
+			}
+			if (t - t0 < (big ? 3400 : 2600)) requestAnimationFrame(frame)
+			else cv.remove()
+		})(t0)
+	} catch {}
 }
 
 /** Countdown berbasis waktu asli (bukan hitungan tick) supaya tidak melenceng. */
