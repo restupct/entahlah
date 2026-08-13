@@ -179,6 +179,11 @@
 				optionButtonsHtml,
 				leaderboardRowsHtml,
 				teamsSummaryHtml,
+				unlockSfx,
+				sfxTick,
+				sfxReveal,
+				sfxFanfare,
+				confettiBurst,
 			} from '/js/common.js'
 
 			// Catatan refactor: dulu ada mq/COLS/applyStack (window.matchMedia) untuk
@@ -192,6 +197,13 @@
 
 			let stopTimer = null
 			let current = null
+			let lastTick = 0
+
+			// AudioContext browser baru boleh berbunyi setelah ada gesture pengguna
+			// (kebijakan autoplay) - unlock sekali di interaksi pertama. Guru hampir
+			// pasti mengklik/menekan tombol sebelum kuis mulai, jadi aman.
+			document.addEventListener('pointerdown', unlockSfx, { once: true })
+			document.addEventListener('keydown', unlockSfx, { once: true })
 
 			const TYPES = [
 				['predict-output', 'Tebak Output'],
@@ -298,6 +310,7 @@
 										p.rank +
 										'</span><span class="lb-name">' +
 										escapeHtml(p.name) +
+										(p.streak >= 3 ? ' 🔥' : '') +
 										(p.online === false
 											? ' <span class="muted">(offline)</span>'
 											: '') +
@@ -389,6 +402,7 @@
 					show('lobby')
 				} else if (m.t === 'card') {
 					current = m
+					lastTick = 0
 					show('game')
 					el('gFlip').classList.remove('is-flipped')
 					el('gType').textContent = m.typeLabel
@@ -406,6 +420,14 @@
 							t.firstElementChild.style.width = frac * 100 + '%'
 							t.className =
 								'timer' + (frac < 0.2 ? ' danger' : frac < 0.5 ? ' warn' : '')
+							// Bunyi "tuk" sekali per detik di 5 detik terakhir -
+							// lastTick mencegah bunyi dobel karena onTick dipanggil
+							// tiap 100ms, bukan tiap detik.
+							const s = Math.ceil(left)
+							if (s <= 5 && s > 0 && s !== lastTick) {
+								lastTick = s
+								sfxTick()
+							}
 						},
 					})
 				} else if (m.t === 'progress') {
@@ -413,6 +435,10 @@
 						m.answered + ' dari ' + m.total + ' menjawab'
 				} else if (m.t === 'reveal') {
 					stopTimer?.()
+					sfxReveal()
+					// Confetti cuma kalau ada yang jawab benar - kalau satu kelas
+					// tidak ada yang benar, hujan confetti malah terasa mengejek.
+					if (m.fastest && m.fastest.length) confettiBurst()
 					el('gFlip').classList.add('is-flipped')
 					el('gAnswer').textContent =
 						LETTERS[m.answer] + '. ' + current.options[m.answer]
@@ -480,6 +506,8 @@
 						: 'Kartu berikutnya'
 				} else if (m.t === 'end') {
 					stopTimer?.()
+					sfxFanfare()
+					confettiBurst(true)
 					show('end')
 					el('eBoard').innerHTML = leaderboardRowsHtml(m.leaderboard, { showTeam: true })
 					renderTeams(el('eTeams'), m.teams, { final: true })
