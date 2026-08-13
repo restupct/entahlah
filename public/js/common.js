@@ -222,15 +222,24 @@ export function teamsSummaryHtml(teams, { highlightTeam = null, final = false } 
 			'</div>'
 	} else {
 		const ranked = entries.slice().sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0]))
+		// PENTING: .lb-row di app.css adalah grid 3 kolom (32px 1fr auto =
+		// rank | nama | skor), jadi sel rank WAJIB dirender. Tanpa sel pertama
+		// ini, nama tim jatuh ke kolom sempit 32px dan kepotong jadi "T..."
+		// karena .lb-name memakai text-overflow: ellipsis - inilah bug
+		// "Tim A tampil sebagai T... padahal ruang masih lega". Bonusnya,
+		// papan peringkat mini ini sekarang juga menampilkan nomor peringkat,
+		// konsisten dengan leaderboard peserta.
 		body =
 			'<div class="card lb">' +
 			ranked
-				.map(([name, score]) => {
+				.map(([name, score], i) => {
 					const mine = highlightTeam === name
 					return (
 						'<div class="lb-row' +
 						(mine ? ' top' : '') +
-						'"><span class="lb-name">' +
+						'"><span class="lb-rank">' +
+						(i + 1) +
+						'</span><span class="lb-name">' +
 						teamLabel(name, mine) +
 						'</span><span class="lb-score">' +
 						score +
