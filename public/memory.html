@@ -82,7 +82,10 @@
 					<div>
 						<span class="pill pill-blue">Latihan mandiri</span>
 						<h1 class="page-title mt-3">Memory Match</h1>
-						<p class="muted hint">Pasangkan potongan kondisi dengan artinya.</p>
+						<p class="muted hint">
+							Pasangkan potongan kode dengan artinya. Semua kartu dibuka
+							beberapa detik di awal - hafalkan posisinya!
+						</p>
 					</div>
 					<a class="btn" href="/">Kembali</a>
 				</div>
@@ -93,15 +96,17 @@
 					<button class="btn ml-auto" id="mReset">Acak ulang</button>
 				</div>
 
+				<div id="mMemo" class="banner banner-blue hidden"></div>
 				<div id="mWin" class="banner banner-green hidden"></div>
 				<div id="grid"></div>
 			</div>
 		</div>
 
 		<script type="module">
-			import { el, escapeHtml } from '/js/common.js'
+			import { el, escapeHtml, startTimer } from '/js/common.js'
 
 			const PAIRS = [
+				// Kondisi & ekspresi JS
 				['x % 2 === 0', 'Bilangan genap'],
 				['n > 0 && n < 100', 'Antara 1 sampai 99'],
 				["nama === ''", 'String kosong'],
@@ -110,19 +115,41 @@
 				['nilai ?? 0', 'Pakai 0 jika null'],
 				['x !== y', 'Tidak sama'],
 				['usia >= 17', 'Minimal 17 tahun'],
+				// HTML dasar
+				['<strong>teks</strong>', 'Teks jadi tebal'],
+				['<a href="...">', 'Membuat tautan'],
+				['<img src="logo.png">', 'Menampilkan gambar'],
+				['<ul> berisi <li>', 'Daftar berpoin'],
+				// Input type
+				['<input type="text">', 'Kolom teks biasa'],
+				['<input type="password">', 'Ketikan jadi bintang'],
+				['<input type="checkbox">', 'Bisa centang banyak'],
+				['<input type="radio">', 'Pilih satu saja'],
+				['<input type="number">', 'Khusus isi angka'],
+				['<input type="date">', 'Pilih tanggal'],
 			]
 			const total = 6
+			// Semua kartu dibuka dulu selama ini supaya bisa dihafal posisinya
+			const MEMORIZE_SECONDS = 5
 
 			let first = null
 			let lock = false
 			let found = 0
 			let moves = 0
+			let cancelPreview = null
 
 			const shuffle = (a) => a.slice().sort(() => Math.random() - 0.5)
 
 			function build() {
+				// Batalin fase hafalan yang masih berjalan kalau pemain pencet
+				// "Acak ulang" di tengah-tengah, supaya timer lama tidak menutup
+				// kartu di ronde yang baru.
+				if (cancelPreview) {
+					cancelPreview()
+					cancelPreview = null
+				}
 				first = null
-				lock = false
+				lock = true
 				found = 0
 				moves = 0
 				el('mWin').classList.add('hidden')
@@ -138,7 +165,7 @@
 				el('grid').innerHTML = shuffle(cards)
 					.map(
 						(c) =>
-							'<div class="tile" data-pair="' +
+							'<div class="tile up" data-pair="' +
 							c.pair +
 							'"><div class="tile-in">' +
 							'<div class="face back">?</div>' +
@@ -149,6 +176,28 @@
 							'</div></div></div>',
 					)
 					.join('')
+
+				// Fase hafalan: semua kartu lahir dengan class "up" (terbuka),
+				// lalu ditutup serentak setelah MEMORIZE_SECONDS detik. Selama
+				// fase ini lock = true, jadi klik pemain diabaikan.
+				const memo = el('mMemo')
+				memo.classList.remove('hidden')
+				cancelPreview = startTimer(MEMORIZE_SECONDS, {
+					onTick: (left) => {
+						memo.textContent =
+							'Hafalkan posisi kartu... ditutup dalam ' +
+							Math.ceil(left) +
+							' detik!'
+					},
+					onDone: () => {
+						document
+							.querySelectorAll('#grid .tile')
+							.forEach((t) => t.classList.remove('up'))
+						memo.classList.add('hidden')
+						lock = false
+						cancelPreview = null
+					},
+				})
 			}
 
 			function update() {
