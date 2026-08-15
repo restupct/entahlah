@@ -5,6 +5,7 @@
     "level": 1,
     "lang": "html",
     "prompt": "Bagian mana yang akan tampil TEBAL di halaman?",
+    "clue": "Satu baris paragraf dengan satu tag inline terselip di tengahnya.",
     "code": "<p>Ini teks <strong>penting</strong> sekali.</p>",
     "options": [
       "Ini teks",
@@ -22,6 +23,7 @@
     "level": 2,
     "lang": "html",
     "prompt": "Kenapa paragraf di bawah judul ikut tampil besar seperti heading?",
+    "clue": "Dua baris HTML: satu heading, satu paragraf. Yang diuji struktur elemennya.",
     "code": "<h1>Judul Artikel\n<p>Ini paragraf pembuka yang seharusnya berukuran normal.</p>",
     "options": [
       "Tag <h1> tidak pernah ditutup",
@@ -39,6 +41,7 @@
     "level": 2,
     "lang": "html",
     "prompt": "Kenapa gambar ini tidak pernah muncul, padahal file logo.png ada di folder yang sama?",
+    "clue": "Satu tag <img> dengan dua atribut saja.",
     "code": "<img source=\"logo.png\" alt=\"Logo\">",
     "options": [
       "Seharusnya atribut src, bukan source",
@@ -56,6 +59,7 @@
     "level": 1,
     "lang": "html",
     "prompt": "Pasangkan tag dengan fungsinya",
+    "clue": "Satu tag <a> beserta atribut href-nya.",
     "code": "<a href=\"...\">teks</a>",
     "options": [
       "Membuat daftar bernomor",
@@ -73,6 +77,7 @@
     "level": 3,
     "lang": "html",
     "prompt": "Elemen apa saja yang menjadi ANAK LANGSUNG dari <div class=\"card\">?",
+    "clue": "Empat baris HTML yang bersarang sampai tiga tingkat.",
     "code": "<div class=\"card\">\n  <h2>Judul</h2>\n  <p>Deskripsi <span>singkat</span></p>\n</div>",
     "options": [
       "<div> itu sendiri",

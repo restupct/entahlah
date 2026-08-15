@@ -4,6 +4,7 @@
     "type": "predict-output",
     "level": 1,
     "prompt": "Apa yang tercetak di console?",
+    "clue": "Satu if-else sederhana, 5 baris, memakai pembanding >=.",
     "code": "let nilai = 75;\nif (nilai >= 75) {\n  console.log('Lulus');\n} else {\n  console.log('Remedial');\n}",
     "options": [
       "Error",
@@ -20,6 +21,7 @@
     "type": "predict-output",
     "level": 2,
     "prompt": "Apa outputnya?",
+    "clue": "Kondisi di dalam if bukan perbandingan, melainkan sebuah nilai. Soal tentang truthy/falsy.",
     "code": "let n = 0;\nif (n) {\n  console.log('A');\n} else {\n  console.log('B');\n}",
     "options": [
       "A",
@@ -36,6 +38,7 @@
     "type": "fix-bug",
     "level": 2,
     "prompt": "Berapa pun isi x, kode ini selalu mencetak 'lima'. Kenapa?",
+    "clue": "Cuma 3 baris, dan sumber masalahnya ada di dalam kurung if.",
     "code": "let x = 3;\nif (x = 5) {\n  console.log('lima');\n}",
     "options": [
       "Karena angka 5 tidak perlu tanda kutip",
@@ -52,6 +55,7 @@
     "type": "pairing",
     "level": 1,
     "prompt": "Pasangkan kondisi dengan artinya",
+    "clue": "Kondisi satu baris yang memakai operator sisa bagi (%).",
     "code": "x % 2 === 0",
     "options": [
       "Cek bilangan positif",
@@ -68,6 +72,7 @@
     "type": "trace-path",
     "level": 3,
     "prompt": "Untuk nilai = 82, cabang mana yang dieksekusi?",
+    "clue": "Rantai if - else if 4 tingkat untuk menentukan grade.",
     "code": "if (nilai >= 90)      grade = 'A';\nelse if (nilai >= 80) grade = 'B';\nelse if (nilai >= 70) grade = 'C';\nelse                  grade = 'D';",
     "options": [
       "grade = 'B'",
@@ -84,6 +89,7 @@
     "type": "predict-output",
     "level": 2,
     "prompt": "Apa outputnya?",
+    "clue": "Dua baris output yang membandingkan == dengan ===.",
     "code": "console.log('5' == 5);\nconsole.log('5' === 5);",
     "options": [
       "true, false",
@@ -100,6 +106,7 @@
     "type": "predict-output",
     "level": 3,
     "prompt": "Apa outputnya?",
+    "clue": "Soal switch-case 9 baris. Kuncinya alur eksekusi antar case.",
     "code": "let hari = 'Sabtu';\nswitch (hari) {\n  case 'Sabtu':\n  case 'Minggu':\n    console.log('Libur');\n    break;\n  default:\n    console.log('Kerja');\n}",
     "options": [
       "Error",
@@ -116,6 +123,7 @@
     "type": "fix-bug",
     "level": 3,
     "prompt": "Kenapa Kerja ikut tercetak saat hari = Sabtu?",
+    "clue": "Soal switch-case pendek. Yang diuji pemahaman alur eksekusi, bukan sintaksis penulisan.",
     "code": "switch (hari) {\n  case 'Sabtu':\n    console.log('Libur');\n  default:\n    console.log('Kerja');\n}",
     "options": [
       "Kurang break",
@@ -132,6 +140,7 @@
     "type": "predict-output",
     "level": 2,
     "prompt": "Apa nilai variabel status?",
+    "clue": "Dua baris dengan operator ternary (kondisi ? ... : ...) dan batas usia 17.",
     "code": "let umur = 17;\nlet status = umur >= 17 ? 'Dewasa' : 'Anak';",
     "options": [
       "'Anak'",
@@ -148,6 +157,7 @@
     "type": "trace-path",
     "level": 4,
     "prompt": "a = 5, b = 10. Apa yang tercetak?",
+    "clue": "If bersarang dua tingkat dengan tiga kemungkinan output.",
     "code": "if (a > 3) {\n  if (b > 20) console.log('P');\n  else console.log('Q');\n} else {\n  console.log('R');\n}",
     "options": [
       "R",
@@ -164,6 +174,7 @@
     "type": "pairing",
     "level": 2,
     "prompt": "Kondisi ini artinya apa?",
+    "clue": "Kondisi satu baris yang menggabungkan dua perbandingan dengan operator &&.",
     "code": "nilai >= 0 && nilai <= 100",
     "options": [
       "Selalu true",
@@ -180,6 +191,7 @@
     "type": "predict-output",
     "level": 4,
     "prompt": "Apa outputnya?",
+    "clue": "Dua if terpisah: satu memakai ||, satu memakai &&.",
     "code": "let a = false, b = true;\nif (a || b) console.log('X');\nif (a && b) console.log('Y');",
     "options": [
       "Y saja",
@@ -196,6 +208,7 @@
     "type": "fix-bug",
     "level": 4,
     "prompt": "Kenapa semua nilai selalu dapat grade C?",
+    "clue": "Rantai if - else if 3 tingkat untuk grade. Semua barisnya sah secara sintaksis.",
     "code": "if (nilai >= 70)      grade = 'C';\nelse if (nilai >= 80) grade = 'B';\nelse if (nilai >= 90) grade = 'A';",
     "options": [
       "Operator salah",
@@ -212,6 +225,7 @@
     "type": "predict-output",
     "level": 3,
     "prompt": "Apa outputnya?",
+    "clue": "Kondisi if-nya sebuah variabel string, bukan perbandingan.",
     "code": "let nama = '';\nif (nama) console.log('Halo ' + nama);\nelse console.log('Nama kosong');",
     "options": [
       "Halo",
@@ -228,6 +242,7 @@
     "type": "trace-path",
     "level": 5,
     "prompt": "usia = 15, punyaSIM = false. Apa hasilnya?",
+    "clue": "Rantai if - else if - else dengan kondisi gabungan &&, tiga kemungkinan output.",
     "code": "if (usia >= 17 && punyaSIM) {\n  console.log('Boleh nyetir');\n} else if (usia >= 17) {\n  console.log('Urus SIM dulu');\n} else {\n  console.log('Belum cukup umur');\n}",
     "options": [
       "Belum cukup umur",
@@ -244,6 +259,7 @@
     "type": "predict-output",
     "level": 5,
     "prompt": "Apa outputnya?",
+    "clue": "If pendek dengan dua baris console.log di bawahnya.",
     "code": "let x = 10;\nif (x > 5)\n  console.log('A');\n  console.log('B');",
     "options": [
       "A dan B",
@@ -260,6 +276,7 @@
     "type": "pairing",
     "level": 3,
     "prompt": "Padanan singkat dari kode ini?",
+    "clue": "Blok if-else 5 baris yang mengisi satu variabel. Cari bentuk ringkasnya.",
     "code": "if (isLogin) {\n  tampil = 'Dashboard';\n} else {\n  tampil = 'Login';\n}",
     "options": [
       "tampil = 'Dashboard' || 'Login'",
@@ -276,6 +293,7 @@
     "type": "predict-output",
     "level": 5,
     "prompt": "Apa outputnya?",
+    "clue": "Tiga baris yang melibatkan nilai null dan operator ??.",
     "code": "let harga = null;\nlet final = harga ?? 0;\nconsole.log(final);",
     "options": [
       "null",
