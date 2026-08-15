@@ -63,6 +63,13 @@
 							<input type="checkbox" id="optShuffle" checked />
 							<span>Acak urutan soal</span>
 						</label>
+						<label class="toggle">
+							<input type="checkbox" id="optBet" />
+							<span>
+								Mode Pasang Poin (sebelum soal dibuka, siswa melihat clue lalu
+								memasang 25/50/100 poin - benar menang, salah minus)
+							</span>
+						</label>
 						<div>
 							<span class="label">Jumlah soal</span>
 							<input
@@ -104,6 +111,23 @@
 					<span class="pill pill-green" id="gAnswered">0 dari 0 menjawab</span>
 				</div>
 				<div class="timer mb-7" id="gTimer"><i></i></div>
+
+				<!-- Fase pasang poin (Mode Pasang Poin): clue tampil besar di
+				     proyektor; kartu soal (gameGrid) disembunyikan sampai fase
+				     ini selesai supaya soal tidak bocor sebelum siswa memasang. -->
+				<div id="betPanel" class="card stack text-center hidden mb-7">
+					<span class="pill pill-orange mx-auto">Pasang Poin</span>
+					<h2 id="betClue" class="text-2xl">-</h2>
+					<p class="muted m-0">
+						Siswa sedang memasang poin di HP masing-masing. Soal dibuka
+						setelah semua selesai memasang atau waktu habis.
+					</p>
+					<div class="row justify-center gap-3">
+						<span class="pill">25</span>
+						<span class="pill">50</span>
+						<span class="pill">100</span>
+					</div>
+				</div>
 
 				<div id="gameGrid" class="game-grid">
 					<div class="flip" id="gFlip">
@@ -252,6 +276,7 @@
 					bank: el('optBank').value,
 					teamMode: el('optTeam').checked,
 					teamCount: Number(el('optTeamCount').value) || 2,
+					betMode: el('optBet').checked,
 					shuffle: el('optShuffle').checked,
 					count: Number(el('optCount').value) || 10,
 					types: [...picked],
@@ -261,7 +286,14 @@
 				sock.send({ t: 'host:options', options: readOptions() })
 			}
 
-			for (const id of ['optBank', 'optTeam', 'optTeamCount', 'optShuffle', 'optCount'])
+			for (const id of [
+				'optBank',
+				'optTeam',
+				'optTeamCount',
+				'optShuffle',
+				'optCount',
+				'optBet',
+			])
 				el(id).addEventListener('change', pushOptions)
 
 			// Tampilkan/sembunyikan panel "Jumlah tim" + tombol kocok ulang cuma
@@ -358,6 +390,28 @@
 				node.innerHTML = teamsSummaryHtml(teams, opts)
 			}
 
+			// Satu helper timer untuk semua fase (pasang poin & soal) supaya
+			// logika bar progres + bunyi tick tidak ditulis dua kali.
+			function runTimer(seconds) {
+				stopTimer?.()
+				stopTimer = startTimer(seconds, {
+					onTick: (left, frac) => {
+						const t = el('gTimer')
+						t.firstElementChild.style.width = frac * 100 + '%'
+						t.className =
+							'timer' + (frac < 0.2 ? ' danger' : frac < 0.5 ? ' warn' : '')
+						// Bunyi "tuk" sekali per detik di 5 detik terakhir -
+						// lastTick mencegah bunyi dobel karena onTick dipanggil
+						// tiap 100ms, bukan tiap detik.
+						const s = Math.ceil(left)
+						if (s <= 5 && s > 0 && s !== lastTick) {
+							lastTick = s
+							sfxTick()
+						}
+					},
+				})
+			}
+
 			function onMessage(m) {
 				if (m.t === 'room') {
 					sessionStorage.setItem('bb_host_code', m.code)
@@ -380,6 +434,7 @@
 					el('optCount').max = m.available
 					el('optTeam').checked = !!m.options.teamMode
 					el('optTeamCount').value = m.options.teamCount || 2
+					el('optBet').checked = !!m.options.betMode
 					el('teamModeExtra').classList.toggle('hidden', !m.options.teamMode)
 					el('urls').innerHTML = m.joinUrls.length
 						? m.joinUrls
@@ -400,10 +455,24 @@
 					if (m.phase === 'lobby') show('lobby')
 				} else if (m.t === 'lobby') {
 					show('lobby')
+				} else if (m.t === 'bet') {
+					// Fase pasang poin (Mode Pasang Poin): tampilkan clue + hitung
+					// mundur di proyektor; kartu soal disembunyikan sampai fase ini
+					// selesai supaya soal tidak bocor sebelum siswa memasang poin.
+					lastTick = 0
+					show('game')
+					el('betPanel').classList.remove('hidden')
+					el('gameGrid').classList.add('hidden')
+					el('gType').textContent = m.typeLabel
+					el('gPos').textContent = 'Kartu ' + (m.index + 1) + ' / ' + m.total
+					el('betClue').textContent = m.clue
+					runTimer(m.timeLimit)
 				} else if (m.t === 'card') {
 					current = m
 					lastTick = 0
 					show('game')
+					el('betPanel').classList.add('hidden')
+					el('gameGrid').classList.remove('hidden')
 					el('gFlip').classList.remove('is-flipped')
 					el('gType').textContent = m.typeLabel
 					el('gPos').textContent = 'Kartu ' + (m.index + 1) + ' / ' + m.total
@@ -413,26 +482,15 @@
 					el('btnReveal').classList.remove('hidden')
 					el('btnNext').classList.add('hidden')
 
-					stopTimer?.()
-					stopTimer = startTimer(m.timeLimit, {
-						onTick: (left, frac) => {
-							const t = el('gTimer')
-							t.firstElementChild.style.width = frac * 100 + '%'
-							t.className =
-								'timer' + (frac < 0.2 ? ' danger' : frac < 0.5 ? ' warn' : '')
-							// Bunyi "tuk" sekali per detik di 5 detik terakhir -
-							// lastTick mencegah bunyi dobel karena onTick dipanggil
-							// tiap 100ms, bukan tiap detik.
-							const s = Math.ceil(left)
-							if (s <= 5 && s > 0 && s !== lastTick) {
-								lastTick = s
-								sfxTick()
-							}
-						},
-					})
+					runTimer(m.timeLimit)
 				} else if (m.t === 'progress') {
+					// Label pill membedakan fase: "sudah pasang" di fase betting,
+					// "menjawab" di fase soal.
 					el('gAnswered').textContent =
-						m.answered + ' dari ' + m.total + ' menjawab'
+						m.answered +
+						' dari ' +
+						m.total +
+						(m.phase === 'betting' ? ' sudah pasang' : ' menjawab')
 				} else if (m.t === 'reveal') {
 					stopTimer?.()
 					sfxReveal()
