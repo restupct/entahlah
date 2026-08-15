@@ -34,6 +34,16 @@
 					<div class="card stack">
 						<h2 class="card-title">Pengaturan</h2>
 						<div>
+							<span class="label">Mode permainan</span>
+							<select class="input" id="optMode">
+								<option value="classic">Klasik - poin dari kecepatan</option>
+								<option value="betting">
+									Taruhan poin - modal awal 300
+								</option>
+							</select>
+							<p class="muted text-small m-0" id="modeHint"></p>
+						</div>
+						<div>
 							<span class="label">Bank soal</span>
 							<select class="input" id="optBank"></select>
 						</div>
@@ -100,6 +110,7 @@
 					<div class="row gap-3">
 						<span class="pill pill-orange" id="gType">-</span>
 						<span class="pill" id="gPos">-</span>
+						<span class="pill pill-orange hidden" id="gStage">-</span>
 					</div>
 					<span class="pill pill-green" id="gAnswered">0 dari 0 menjawab</span>
 				</div>
@@ -125,6 +136,7 @@
 										<h2 id="gAnswer" class="text-2xl">-</h2>
 										<p id="gWhy" class="muted m-0">-</p>
 										<div id="gFastest" class="stack gap-1"></div>
+										<div id="gBets" class="stack gap-1"></div>
 										<div class="stack gap-3" id="gStats"></div>
 									</div>
 								</div>
@@ -249,6 +261,7 @@
 
 			function readOptions() {
 				return {
+					mode: el('optMode').value,
 					bank: el('optBank').value,
 					teamMode: el('optTeam').checked,
 					teamCount: Number(el('optTeamCount').value) || 2,
@@ -261,8 +274,26 @@
 				sock.send({ t: 'host:options', options: readOptions() })
 			}
 
-			for (const id of ['optBank', 'optTeam', 'optTeamCount', 'optShuffle', 'optCount'])
+			for (const id of [
+				'optMode',
+				'optBank',
+				'optTeam',
+				'optTeamCount',
+				'optShuffle',
+				'optCount',
+			])
 				el(id).addEventListener('change', pushOptions)
+
+			// Penjelasan singkat mode yang dipilih - biar guru tahu apa yang akan
+			// dilihat siswa tanpa harus buka README.
+			function renderModeHint() {
+				el('modeHint').textContent =
+					el('optMode').value === 'betting'
+						? 'Tiap soal: siswa memasang 50/100/200 poin dulu (10 detik, pilihan jawaban belum muncul), baru menjawab. Benar = taruhan didapat + bonus cepat, salah/tidak menjawab = taruhan hangus. Poin tidak pernah minus.'
+						: 'Benar = 100 poin + bonus cepat + bonus beruntun.'
+			}
+			el('optMode').addEventListener('change', renderModeHint)
+			renderModeHint()
 
 			// Tampilkan/sembunyikan panel "Jumlah tim" + tombol kocok ulang cuma
 			// saat mode tim menyala - dulu opsi ini tidak ada sama sekali.
@@ -377,6 +408,8 @@
 							.join('')
 					}
 					el('optBank').value = m.options.bank
+					el('optMode').value = m.options.mode || 'classic'
+					renderModeHint()
 					el('optCount').max = m.available
 					el('optTeam').checked = !!m.options.teamMode
 					el('optTeamCount').value = m.options.teamCount || 2
@@ -409,9 +442,23 @@
 					el('gPos').textContent = 'Kartu ' + (m.index + 1) + ' / ' + m.total
 					el('gPrompt').textContent = m.prompt
 					el('gCode').innerHTML = highlight(m.code, m.lang)
-					el('gOpts').innerHTML = optionButtonsHtml(m.options)
-					el('btnReveal').classList.remove('hidden')
-					el('btnNext').classList.add('hidden')
+
+					const betStage = m.stage === 'bet'
+					el('gStage').classList.toggle('hidden', !betStage)
+					el('gStage').textContent = 'Fase taruhan'
+					if (betStage) {
+						// Sengaja tidak menampilkan opsi jawaban di proyektor juga -
+						// server belum mengirimnya, dan kalau ditampilkan, taruhan jadi
+						// tidak ada gunanya karena siswa bisa mengintip layar guru.
+						el('gOpts').innerHTML =
+							'<p class="muted m-0">Siswa sedang memasang taruhan (50 / 100 / 200 poin). Pilihan jawaban muncul setelah waktu taruhan habis.</p>'
+						el('btnReveal').classList.add('hidden')
+						el('btnNext').classList.add('hidden')
+					} else {
+						el('gOpts').innerHTML = optionButtonsHtml(m.options)
+						el('btnReveal').classList.remove('hidden')
+						el('btnNext').classList.add('hidden')
+					}
 
 					stopTimer?.()
 					stopTimer = startTimer(m.timeLimit, {
@@ -432,19 +479,28 @@
 					})
 				} else if (m.t === 'progress') {
 					el('gAnswered').textContent =
-						m.answered + ' dari ' + m.total + ' menjawab'
+						m.answered +
+						' dari ' +
+						m.total +
+						(m.stage === 'bet' ? ' memasang taruhan' : ' menjawab')
 				} else if (m.t === 'reveal') {
 					stopTimer?.()
 					sfxReveal()
 					// Confetti cuma kalau ada yang jawab benar - kalau satu kelas
 					// tidak ada yang benar, hujan confetti malah terasa mengejek.
 					if (m.fastest && m.fastest.length) confettiBurst()
+					el('gStage').classList.add('hidden')
 					el('gFlip').classList.add('is-flipped')
+					// current selalu kartu tahap 'question' di titik ini, tapi tetap
+					// dijaga supaya tidak meledak kalau urutan pesan tidak terduga.
+					const opts = (current && current.options) || []
 					el('gAnswer').textContent =
-						LETTERS[m.answer] + '. ' + current.options[m.answer]
+						LETTERS[m.answer] + '. ' + (opts[m.answer] || '')
 					el('gWhy').textContent = m.explanation
-					el('gBackPrompt').textContent = current.prompt
-					el('gBackCode').innerHTML = highlight(current.code, current.lang)
+					el('gBackPrompt').textContent = current ? current.prompt : ''
+					el('gBackCode').innerHTML = current
+						? highlight(current.code, current.lang)
+						: ''
 
 					// Transparansi ke seluruh kelas: siapa yang paling cepat DAN benar,
 					// lengkap dengan waktu jawabnya - biar kalau ada yang ngerasa
@@ -467,8 +523,24 @@
 									.join('')
 							: '<p class="muted text-small m-0">Belum ada yang menjawab benar.</p>'
 
+					// Sebaran taruhan kelas (mode taruhan) - bahan diskusi bagus:
+					// "yang taruh 200 tadi kenapa yakin?"
+					el('gBets').innerHTML = m.betStats
+						? '<div class="label m-0">Taruhan kelas</div>' +
+							Object.keys(m.betStats)
+								.map(
+									(k) =>
+										'<div class="row between text-small"><span>' +
+										k +
+										' poin</span><strong>' +
+										m.betStats[k] +
+										' siswa</strong></div>',
+								)
+								.join('')
+						: ''
+
 					const total = Math.max(1, m.responders)
-					el('gStats').innerHTML = current.options
+					el('gStats').innerHTML = opts
 						.map((o, i) => {
 							const pct = Math.round((m.stats[i] / total) * 100)
 							const okOpt = i === m.answer

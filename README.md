@@ -5,6 +5,51 @@ Didesain untuk dipakai **offline, di satu jaringan WiFi lokal** (tanpa
 internet) - satu laptop jadi server + layar proyektor, siswa buka dari HP
 masing-masing.
 
+## Mode permainan
+
+Dipilih guru di lobby `/host` lewat dropdown **Mode permainan**, sebelum
+menekan "Mulai kuis".
+
+### 1. Klasik (default)
+
+Seperti versi sebelumnya, perilakunya tidak berubah sedikit pun:
+
+- Semua siswa mulai dari 0 poin.
+- Jawaban benar = 100 poin + bonus cepat (maks 100) + bonus beruntun
+  (10 per streak, maks 50).
+- Salah atau tidak menjawab = 0 poin, tidak ada pengurangan.
+
+### 2. Taruhan Poin
+
+Menambah satu keputusan sebelum menjawab: *seberapa yakin kamu?*
+
+- Tiap siswa mulai dengan **modal 300 poin**.
+- Setiap kartu punya dua tahap:
+  1. **Fase taruhan (10 detik).** Soal & blok kodenya sudah tampil, tapi
+     **pilihan jawaban belum dikirim ke HP siswa maupun ke layar guru**.
+     Siswa memilih taruhan **50, 100, atau 200 poin**. Nominal yang lebih
+     besar dari poin yang dia punya tidak ditawarkan. Kalau tidak memilih
+     sampai waktu habis, taruhannya otomatis nominal terkecil - jadi "diam
+     saja" bukan strategi bebas risiko. Kalau semua siswa sudah memasang
+     taruhan, tahap berikutnya langsung dibuka tanpa menunggu sisa waktu.
+  2. **Fase menjawab.** Pilihan jawaban muncul dengan batas waktu normal
+     (`timeLimit` soal), dan jawaban masih boleh diganti sampai waktu habis,
+     sama seperti mode klasik.
+- Perhitungan poin:
+  - **Benar** = `+taruhan` + bonus cepat (maks **25% dari taruhan**) + bonus
+    beruntun (10 per streak, maks 50).
+  - **Salah** = `-taruhan`.
+  - **Tidak menjawab padahal sudah bertaruh** = taruhan hangus penuh.
+  - **Poin tidak pernah minus.** Skor dilantai di 0 setiap kali jawaban
+    dibuka, jadi siswa yang sedang sial tetap punya sesuatu untuk
+    dipertaruhkan di kartu berikutnya (minimal selalu boleh taruh 50).
+- Di layar guru, saat jawaban dibuka ada tambahan panel **Taruhan kelas**
+  (berapa siswa yang taruh 50 / 100 / 200) - enak dipakai bahan diskusi:
+  "yang tadi taruh 200, kenapa yakin?"
+
+Mengganti mode saat masih di lobby otomatis menyetel ulang poin awal semua
+peserta (300 untuk mode taruhan, 0 untuk klasik).
+
 ## Apa yang berubah dari versi sebelumnya
 
 1. **Modernisasi dengan library, tetap stabil offline**
@@ -82,13 +127,14 @@ Soal tidak lagi hardcode ke satu file. Setiap file `.json` di folder
 
 Guru tinggal pilih bank yang mau dipakai dari dropdown sebelum menekan
 "Mulai kuis"; jumlah soal maksimal & tombol jenis kartu otomatis menyesuaikan
-bank yang dipilih.
+bank yang dipilih. Semua bank soal bisa dipakai di kedua mode permainan -
+mode taruhan tidak butuh format soal khusus.
 
 ## Struktur folder
 
 ```
 server.js            HTTP static server + WebSocket (pakai `ws`)
-lib/game.js          Logika room, skor, alur soal (pakai `nanoid`)
+lib/game.js          Logika room, skor, mode permainan, alur soal (pakai `nanoid`)
 banks/*.json         Bank-bank soal, satu file per mata pelajaran
 public/index.html    Beranda
 public/host.html     Layar guru
@@ -110,3 +156,7 @@ Script ini men-drive satu host + satu peserta (emulasi iPhone SE) sampai
 tahap reveal jawaban, lalu memeriksa bahwa blok kode di kartu jawaban tetap
 sepenuhnya terlihat (tidak kepotong), dan menyimpan screenshot bukti di
 `test/shot-player-reveal.png` dan `test/shot-host-reveal.png`.
+
+Catatan: tes ini memakai mode **Klasik** (mode default), jadi tetap valid
+tanpa perubahan. Tes otomatis khusus mode Taruhan Poin (fase taruhan ->
+jawab -> cek poin hangus) belum ada dan masih jadi TODO.

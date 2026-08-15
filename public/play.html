@@ -48,6 +48,31 @@
 					<p class="muted m-0">
 						Tunggu guru memulai kuis. Jangan tutup halaman ini.
 					</p>
+					<p class="muted m-0 text-small hidden" id="wMode">-</p>
+				</div>
+			</section>
+
+			<!-- ============================= BET ============================== -->
+			<!-- Fase taruhan (khusus mode Taruhan Poin). Opsi jawaban SENGAJA belum
+				 ditampilkan di sini - server pun belum mengirimnya - supaya siswa
+				 menaksir kemampuannya sendiri dulu sebelum menentukan besar taruhan. -->
+			<section id="bet" class="hidden">
+				<div class="row between mb-5">
+					<span class="pill pill-orange" id="bType">-</span>
+					<div class="row gap-3">
+						<span class="pill" id="bPos">-</span>
+						<span class="pill pill-blue" id="bScore">0</span>
+					</div>
+				</div>
+				<div class="timer mb-6" id="bTimer"><i></i></div>
+
+				<div class="card stack">
+					<span class="pill pill-green">Pasang taruhan dulu</span>
+					<h2 id="bPrompt" class="text-lg">-</h2>
+					<pre class="codebox" id="bCode"></pre>
+					<p class="muted m-0 text-small" id="bInfo">-</p>
+					<div class="stack gap-3" id="bOpts"></div>
+					<p id="bHint" class="muted hint text-center">-</p>
 				</div>
 			</section>
 
@@ -56,6 +81,7 @@
 				<div class="row between mb-5">
 					<span class="pill pill-orange" id="pType">-</span>
 					<div class="row gap-3">
+						<span class="pill pill-orange hidden" id="pBet">-</span>
 						<span class="pill" id="pPos">-</span>
 						<span class="pill pill-blue" id="pScore">0</span>
 					</div>
@@ -133,6 +159,12 @@
 			let current = null
 			let lastTick = 0
 			let myPid = localStorage.getItem('bb_pid') || null
+			// Skor & taruhan terakhir yang diketahui klien - dipakai untuk
+			// menentukan nominal taruhan yang sanggup dibayar (server tetap yang
+			// memvalidasi ulang, ini cuma biar tombol yang mustahil tidak muncul).
+			let myScore = 0
+			let myBet = null
+			const BET_CHOICES = [50, 100, 200]
 
 			// Suara saat jawaban dibuka: benar -> true.mp3, salah/tidak menjawab
 			// -> false.mp3. File-nya ditaruh di public/sounds/ (lihat README di
@@ -220,8 +252,84 @@
 			}
 
 			function show(which) {
-				for (const id of ['join', 'wait', 'game', 'end'])
+				for (const id of ['join', 'wait', 'bet', 'game', 'end'])
 					el(id).classList.toggle('hidden', id !== which)
+			}
+
+			// ===================== Fase taruhan (mode betting) =====================
+
+			// Nominal yang sanggup dibayar dari poin sekarang. Kalau poin tidak
+			// cukup untuk taruhan terkecil pun, tetap disediakan satu taruhan
+			// minimum - server memakai aturan yang sama, dan skor tidak pernah
+			// dibiarkan minus.
+			function betOptions(choices) {
+				const list = choices && choices.length ? choices : BET_CHOICES
+				const affordable = list.filter((b) => b <= myScore)
+				return affordable.length ? affordable : [list[0]]
+			}
+
+			function markBet(bet) {
+				myBet = bet
+				for (const b of el('bOpts').children)
+					b.classList.toggle('btn-primary', Number(b.dataset.bet) === bet)
+			}
+
+			function placeBet(bet) {
+				unlockAudio()
+				sock.send({ t: 'player:bet', bet })
+				markBet(bet)
+				el('bHint').textContent =
+					'Taruhan ' + bet + ' poin tersimpan. Masih bisa diganti selama waktu taruhan.'
+			}
+
+			function renderBet(m) {
+				myBet = null
+				lastTick = 0
+				show('bet')
+				el('bType').textContent = m.typeLabel
+				el('bPos').textContent = m.index + 1 + ' / ' + m.total
+				el('bScore').textContent = myScore
+				el('bPrompt').textContent = m.prompt
+				el('bCode').innerHTML = highlight(m.code, m.lang)
+				el('bInfo').textContent =
+					'Nanti ada ' +
+					(m.optionCount || 4) +
+					' pilihan jawaban, tapi belum ditampilkan. Taksir dulu seberapa yakin kamu.'
+
+				const list = betOptions(m.betChoices)
+				el('bOpts').innerHTML = list
+					.map(
+						(b) =>
+							'<button class="btn btn-block" data-bet="' +
+							b +
+							'">Taruh ' +
+							b +
+							' poin</button>',
+					)
+					.join('')
+				for (const b of el('bOpts').children)
+					b.onclick = () => placeBet(Number(b.dataset.bet))
+				el('bHint').textContent =
+					'Kalau tidak memilih, taruhanmu otomatis ' + list[0] + ' poin.'
+
+				stopTimer?.()
+				stopTimer = startTimer(m.timeLimit, {
+					onTick: (left, frac) => {
+						const t = el('bTimer')
+						t.firstElementChild.style.width = frac * 100 + '%'
+						t.className =
+							'timer' + (frac < 0.2 ? ' danger' : frac < 0.5 ? ' warn' : '')
+						const s = Math.ceil(left)
+						if (s <= 5 && s > 0 && s !== lastTick) {
+							lastTick = s
+							sfxTick()
+						}
+					},
+					onDone: () => {
+						for (const b of el('bOpts').children) b.disabled = true
+						el('bHint').textContent = 'Taruhan ditutup. Bersiap...'
+					},
+				})
 			}
 
 			function pick(i) {
@@ -241,6 +349,7 @@
 
 			document.addEventListener('keydown', (e) => {
 				if (el('game').classList.contains('hidden') || !current) return
+				if (!Array.isArray(current.options)) return
 				const k = e.key.toUpperCase()
 				const byLetter = LETTERS.indexOf(k)
 				const byNum = /^[1-9]$/.test(k) ? Number(k) - 1 : -1
@@ -257,15 +366,26 @@
 				} else if (m.t === 'joined') {
 					joined = true
 					myPid = m.pid
+					myScore = m.score
 					localStorage.setItem('bb_pid', m.pid)
 					localStorage.setItem('bb_code', m.code)
 					localStorage.setItem('bb_name', m.name)
 					el('pScore').textContent = m.score
 					el('wName').textContent = m.name + (m.team ? ' - Tim ' + m.team : '')
+					el('wMode').classList.toggle('hidden', m.mode !== 'betting')
+					el('wMode').textContent =
+						'Mode Taruhan Poin - kamu mulai dengan ' +
+						m.score +
+						' poin. Tiap soal, pasang taruhan dulu sebelum pilihan jawaban muncul.'
 					if (m.phase === 'lobby' || m.phase === 'reveal') show('wait')
 				} else if (m.t === 'lobby') {
 					show('wait')
 				} else if (m.t === 'card') {
+					// Tahap taruhan: payload-nya belum berisi opsi jawaban sama sekali.
+					if (m.stage === 'bet') {
+						renderBet(m)
+						return
+					}
 					current = Object.assign({}, m, { locked: false })
 					lastTick = 0
 					show('game')
@@ -274,7 +394,17 @@
 					el('pPos').textContent = m.index + 1 + ' / ' + m.total
 					el('pPrompt').textContent = m.prompt
 					el('pCode').innerHTML = highlight(m.code, m.lang)
-					el('pHint').textContent = 'Makin cepat menjawab, makin besar poinnya.'
+					if (m.mode === 'betting') {
+						el('pBet').classList.remove('hidden')
+						el('pBet').textContent = 'Taruhan ' + (myBet || 0)
+						el('pHint').textContent =
+							'Taruhan ' +
+							(myBet || 0) +
+							' poin. Benar = dapat + bonus cepat, salah / tidak menjawab = hangus.'
+					} else {
+						el('pBet').classList.add('hidden')
+						el('pHint').textContent = 'Makin cepat menjawab, makin besar poinnya.'
+					}
 					el('pOpts').innerHTML = optionButtonsHtml(m.options, {
 						tag: 'button',
 						selectable: true,
@@ -306,6 +436,14 @@
 							}
 						},
 					})
+				} else if (m.t === 'betAck') {
+					// Konfirmasi nominal yang benar-benar tercatat di server (bisa
+					// diturunkan kalau poin tidak cukup).
+					markBet(m.bet)
+				} else if (m.t === 'betLocked') {
+					// Waktu taruhan habis - server mengunci nominal final, termasuk
+					// taruhan minimum otomatis untuk yang tidak memilih.
+					myBet = m.bet
 				} else if (m.t === 'ack') {
 					// Cuma konfirmasi pilihan mana yang tersimpan di server saat ini -
 					// TIDAK mengunci tombol, supaya siswa masih bisa ganti pilihan.
@@ -320,7 +458,9 @@
 					// Confetti kecil di HP sendiri kalau jawabannya benar - rasanya
 					// lebih personal daripada cuma lihat confetti di proyektor.
 					if (m.answered && m.correct) confettiBurst()
+					show('game')
 					el('pFlip').classList.add('is-flipped')
+					myScore = m.score
 					el('pScore').textContent = m.score
 					if (current) {
 						el('pBackPrompt').textContent = current.prompt
@@ -343,16 +483,25 @@
 							? 'var(--green)'
 							: 'var(--red)'
 					el('pVerdict').textContent = !m.answered
-						? 'Tidak sempat menjawab'
+						? m.mode === 'betting' && m.bet
+							? 'Tidak menjawab - taruhan hangus'
+							: 'Tidak sempat menjawab'
 						: m.correct
 							? 'Benar!'
 							: 'Belum tepat'
-					el('pPoints').textContent = '+' + m.points
+					// Di mode taruhan poin bisa negatif (taruhan hangus), jadi tanda
+					// '+' cuma dipasang kalau memang bertambah.
+					el('pPoints').textContent = (m.points > 0 ? '+' : '') + m.points
 					if (m.answered && m.correct && m.breakdown) {
 						const secs = ((m.ms || 0) / 1000).toFixed(1)
+						const betting = m.breakdown.mode === 'betting'
 						el('pBreakdown').classList.remove('hidden')
 						el('pBreakdown').innerHTML =
-							'<div class="row between text-small"><span class="muted">Poin dasar (jawaban benar)</span><strong>+' +
+							'<div class="row between text-small"><span class="muted">' +
+							(betting
+								? 'Taruhan dimenangkan'
+								: 'Poin dasar (jawaban benar)') +
+							'</span><strong>+' +
 							m.breakdown.base +
 							'</strong></div>' +
 							'<div class="row between text-small"><span class="muted">Bonus cepat (jawab dlm ' +
@@ -365,6 +514,17 @@
 									m.breakdown.streakBonus +
 									'</strong></div>'
 								: '')
+					} else if (m.mode === 'betting' && m.bet) {
+						// Salah atau tidak menjawab di mode taruhan - tunjukkan
+						// nominal yang hangus, biar jelas kenapa poinnya turun.
+						el('pBreakdown').classList.remove('hidden')
+						el('pBreakdown').innerHTML =
+							'<div class="row between text-small"><span class="muted">Taruhan hangus</span><strong>-' +
+							m.bet +
+							'</strong></div>' +
+							'<div class="row between text-small"><span class="muted">Poin tidak pernah minus</span><strong>' +
+							m.score +
+							'</strong></div>'
 					} else {
 						el('pBreakdown').classList.add('hidden')
 						el('pBreakdown').innerHTML = ''
