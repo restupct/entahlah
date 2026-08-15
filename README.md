@@ -25,16 +25,17 @@ Menambah satu keputusan sebelum menjawab: *seberapa yakin kamu?*
 
 - Tiap siswa mulai dengan **modal 300 poin**.
 - Setiap kartu punya dua tahap:
-  1. **Fase taruhan (10 detik).** Soal & blok kodenya sudah tampil, tapi
-     **pilihan jawaban belum dikirim ke HP siswa maupun ke layar guru**.
+  1. **Fase taruhan (10 detik).** **Pilihan jawaban belum dikirim ke HP siswa
+     maupun ke layar guru**; seberapa banyak isi soal yang ikut ditampilkan
+     diatur lewat dropdown **Info saat taruhan** (lihat di bawah).
      Siswa memilih taruhan **50, 100, atau 200 poin**. Nominal yang lebih
      besar dari poin yang dia punya tidak ditawarkan. Kalau tidak memilih
      sampai waktu habis, taruhannya otomatis nominal terkecil - jadi "diam
      saja" bukan strategi bebas risiko. Kalau semua siswa sudah memasang
      taruhan, tahap berikutnya langsung dibuka tanpa menunggu sisa waktu.
-  2. **Fase menjawab.** Pilihan jawaban muncul dengan batas waktu normal
-     (`timeLimit` soal), dan jawaban masih boleh diganti sampai waktu habis,
-     sama seperti mode klasik.
+  2. **Fase menjawab.** Soal lengkap + pilihan jawaban muncul dengan batas
+     waktu normal (`timeLimit` soal), dan jawaban masih boleh diganti sampai
+     waktu habis, sama seperti mode klasik.
 - Perhitungan poin:
   - **Benar** = `+taruhan` + bonus cepat (maks **25% dari taruhan**) + bonus
     beruntun (10 per streak, maks 50).
@@ -49,6 +50,37 @@ Menambah satu keputusan sebelum menjawab: *seberapa yakin kamu?*
 
 Mengganti mode saat masih di lobby otomatis menyetel ulang poin awal semua
 peserta (300 untuk mode taruhan, 0 untuk klasik).
+
+#### Info saat taruhan (3 level)
+
+Dropdown ini cuma muncul kalau mode Taruhan Poin dipilih, dan menentukan
+seberapa banyak yang boleh dilihat siswa **selama fase taruhan saja** - di
+fase menjawab, soal selalu tampil lengkap:
+
+| Pilihan | Yang dilihat siswa | Rasanya |
+| --- | --- | --- |
+| **Soal penuh** (default) | Pertanyaan + blok kode | Taruhan = penilaian atas soal yang benar-benar dibaca. Paling adil, tapi butuh waktu baca. |
+| **Petunjuk** | Pertanyaan + petunjuk singkat, kode ditahan | Jalan tengah: siswa tahu topiknya, tapi belum bisa menghitung jawabannya. |
+| **Buta** | Cuma jenis kartu & levelnya | Paling cepat & paling seru, tapi lebih untung-untungan. Cocok untuk ronde pemanasan. |
+
+Petunjuk **tidak dibuat otomatis dari kode**, melainkan ditulis manual per
+soal di field `clue` bank soal. Ini disengaja: ringkasan otomatis gampang
+membocorkan jawaban (mis. menyebut operator yang justru jadi kunci di soal
+"Cari Bug"). Contoh:
+
+```json
+{
+  "id": "c03",
+  "type": "fix-bug",
+  "prompt": "Kode ini harusnya mencetak \"Lulus\" saat nilai 75. Kenapa tidak?",
+  "clue": "Cuma 3 baris, dan sumber masalahnya ada di dalam kurung if.",
+  "code": "..."
+}
+```
+
+Soal yang belum punya `clue` tetap bisa dimainkan - siswa cuma diberi tahu
+bahwa kartu itu tanpa petunjuk, dan bertaruh berdasarkan jenis kartu &
+levelnya. Semua soal bawaan (`js-dasar`, `html-dasar`) sudah punya `clue`.
 
 ## Apa yang berubah dari versi sebelumnya
 
@@ -115,8 +147,8 @@ Soal tidak lagi hardcode ke satu file. Setiap file `.json` di folder
 
 1. Buat file baru, mis. `banks/sql-dasar.json`, isinya array soal dengan
    skema yang sama seperti `banks/js-dasar.json` / `banks/html-dasar.json`
-   (`id`, `type`, `level`, `lang` opsional, `prompt`, `code`, `options`,
-   `answer`, `explanation`, `timeLimit`).
+   (`id`, `type`, `level`, `lang` opsional, `prompt`, `clue` opsional,
+   `code`, `options`, `answer`, `explanation`, `timeLimit`).
 2. Restart server (`npm start` ulang).
 3. Nama file otomatis jadi label rapi di dropdown - `sql-dasar.json` tampil
    sebagai "SQL Dasar", `js-dasar.json` sebagai "JS Dasar", dst. Kata-kata
@@ -128,7 +160,8 @@ Soal tidak lagi hardcode ke satu file. Setiap file `.json` di folder
 Guru tinggal pilih bank yang mau dipakai dari dropdown sebelum menekan
 "Mulai kuis"; jumlah soal maksimal & tombol jenis kartu otomatis menyesuaikan
 bank yang dipilih. Semua bank soal bisa dipakai di kedua mode permainan -
-mode taruhan tidak butuh format soal khusus.
+mode taruhan tidak butuh format soal khusus (`clue` cuma dipakai kalau guru
+memilih level info "Petunjuk").
 
 ## Struktur folder
 
@@ -159,4 +192,5 @@ sepenuhnya terlihat (tidak kepotong), dan menyimpan screenshot bukti di
 
 Catatan: tes ini memakai mode **Klasik** (mode default), jadi tetap valid
 tanpa perubahan. Tes otomatis khusus mode Taruhan Poin (fase taruhan ->
-jawab -> cek poin hangus) belum ada dan masih jadi TODO.
+jawab -> cek poin hangus, termasuk 3 level info taruhan) belum ada dan masih
+jadi TODO.

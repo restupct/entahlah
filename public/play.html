@@ -55,11 +55,15 @@
 			<!-- ============================= BET ============================== -->
 			<!-- Fase taruhan (khusus mode Taruhan Poin). Opsi jawaban SENGAJA belum
 				 ditampilkan di sini - server pun belum mengirimnya - supaya siswa
-				 menaksir kemampuannya sendiri dulu sebelum menentukan besar taruhan. -->
+				 menaksir kemampuannya sendiri dulu sebelum menentukan besar taruhan.
+				 Sisa isinya (pertanyaan, blok kode, petunjuk) tergantung setelan
+				 "Info saat taruhan" milik guru, jadi tiap elemen di bawah harus siap
+				 disembunyikan. -->
 			<section id="bet" class="hidden">
 				<div class="row between mb-5">
 					<span class="pill pill-orange" id="bType">-</span>
 					<div class="row gap-3">
+						<span class="pill hidden" id="bLevel">-</span>
 						<span class="pill" id="bPos">-</span>
 						<span class="pill pill-blue" id="bScore">0</span>
 					</div>
@@ -70,6 +74,7 @@
 					<span class="pill pill-green">Pasang taruhan dulu</span>
 					<h2 id="bPrompt" class="text-lg">-</h2>
 					<pre class="codebox" id="bCode"></pre>
+					<div class="banner banner-green hidden" id="bClue"></div>
 					<p class="muted m-0 text-small" id="bInfo">-</p>
 					<div class="stack gap-3" id="bOpts"></div>
 					<p id="bHint" class="muted hint text-center">-</p>
@@ -282,19 +287,50 @@
 					'Taruhan ' + bet + ' poin tersimpan. Masih bisa diganti selama waktu taruhan.'
 			}
 
+			// Seberapa banyak isi soal yang boleh dilihat di fase ini ditentukan
+			// guru lewat setelan "Info saat taruhan" (m.betInfo):
+			// 'full' -> pertanyaan + blok kode, 'clue' -> pertanyaan + petunjuk,
+			// 'blind' -> cuma jenis kartu & levelnya. Jadi prompt/code/clue bisa
+			// saja tidak dikirim sama sekali dan elemennya harus disembunyikan.
 			function renderBet(m) {
 				myBet = null
 				lastTick = 0
 				show('bet')
+				const info = m.betInfo || 'full'
 				el('bType').textContent = m.typeLabel
 				el('bPos').textContent = m.index + 1 + ' / ' + m.total
 				el('bScore').textContent = myScore
-				el('bPrompt').textContent = m.prompt
-				el('bCode').innerHTML = highlight(m.code, m.lang)
+				// Level jadi bahan taksiran utama kalau soalnya sengaja ditahan,
+				// jadi cuma ditampilkan saat memang berguna.
+				el('bLevel').textContent = 'Level ' + (m.level || 1)
+				el('bLevel').classList.toggle('hidden', info === 'full')
+				el('bPrompt').textContent = m.prompt || ''
+				el('bPrompt').classList.toggle('hidden', !m.prompt)
+				el('bCode').innerHTML = m.code ? highlight(m.code, m.lang) : ''
+				el('bCode').classList.toggle('hidden', !m.code)
+				// Petunjuk diambil apa adanya dari bank soal. Soal lama yang belum
+				// punya field clue tetap bisa dimainkan - siswa cuma diberi tahu
+				// kartu ini memang tanpa petunjuk.
+				el('bClue').textContent =
+					info !== 'clue'
+						? ''
+						: m.clue
+							? 'Petunjuk: ' + m.clue
+							: 'Kartu ini belum punya petunjuk - taksir dari jenis kartu & levelnya saja.'
+				el('bClue').classList.toggle('hidden', info !== 'clue')
+				const optCount = m.optionCount || 4
 				el('bInfo').textContent =
-					'Nanti ada ' +
-					(m.optionCount || 4) +
-					' pilihan jawaban, tapi belum ditampilkan. Taksir dulu seberapa yakin kamu.'
+					info === 'blind'
+						? 'Soalnya belum ditampilkan sama sekali - taksir dari jenis kartu & levelnya. Nanti ada ' +
+							optCount +
+							' pilihan jawaban.'
+						: info === 'clue'
+							? 'Blok kodenya belum ditampilkan, baru pertanyaan & petunjuknya. Nanti ada ' +
+								optCount +
+								' pilihan jawaban.'
+							: 'Nanti ada ' +
+								optCount +
+								' pilihan jawaban, tapi belum ditampilkan. Taksir dulu seberapa yakin kamu.'
 
 				const list = betOptions(m.betChoices)
 				el('bOpts').innerHTML = list

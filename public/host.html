@@ -43,6 +43,17 @@
 							</select>
 							<p class="muted text-small m-0" id="modeHint"></p>
 						</div>
+						<div id="bettingExtra" class="stack gap-3 hidden">
+							<div>
+								<span class="label">Info saat taruhan</span>
+								<select class="input" id="optBetInfo">
+									<option value="full">Soal penuh - pertanyaan + kode</option>
+									<option value="clue">Petunjuk - kode disembunyikan</option>
+									<option value="blind">Buta - cuma jenis kartu &amp; level</option>
+								</select>
+								<p class="muted text-small m-0" id="betInfoHint"></p>
+							</div>
+						</div>
 						<div>
 							<span class="label">Bank soal</span>
 							<select class="input" id="optBank"></select>
@@ -262,6 +273,9 @@
 			function readOptions() {
 				return {
 					mode: el('optMode').value,
+					// Cuma berpengaruh di mode taruhan - server pun mengabaikannya
+					// saat mode klasik.
+					betInfo: el('optBetInfo').value,
 					bank: el('optBank').value,
 					teamMode: el('optTeam').checked,
 					teamCount: Number(el('optTeamCount').value) || 2,
@@ -276,6 +290,7 @@
 
 			for (const id of [
 				'optMode',
+				'optBetInfo',
 				'optBank',
 				'optTeam',
 				'optTeamCount',
@@ -285,14 +300,24 @@
 				el(id).addEventListener('change', pushOptions)
 
 			// Penjelasan singkat mode yang dipilih - biar guru tahu apa yang akan
-			// dilihat siswa tanpa harus buka README.
+			// dilihat siswa tanpa harus buka README. Sekalian menampilkan /
+			// menyembunyikan setelan yang cuma relevan di mode taruhan.
 			function renderModeHint() {
-				el('modeHint').textContent =
-					el('optMode').value === 'betting'
-						? 'Tiap soal: siswa memasang 50/100/200 poin dulu (10 detik, pilihan jawaban belum muncul), baru menjawab. Benar = taruhan didapat + bonus cepat, salah/tidak menjawab = taruhan hangus. Poin tidak pernah minus.'
-						: 'Benar = 100 poin + bonus cepat + bonus beruntun.'
+				const betting = el('optMode').value === 'betting'
+				el('modeHint').textContent = betting
+					? 'Tiap soal: siswa memasang 50/100/200 poin dulu (10 detik, pilihan jawaban belum muncul), baru menjawab. Benar = taruhan didapat + bonus cepat, salah/tidak menjawab = taruhan hangus. Poin tidak pernah minus.'
+					: 'Benar = 100 poin + bonus cepat + bonus beruntun.'
+				el('bettingExtra').classList.toggle('hidden', !betting)
+				const info = el('optBetInfo').value
+				el('betInfoHint').textContent =
+					info === 'blind'
+						? 'Siswa cuma lihat jenis kartu & levelnya. Taruhan jadi taksiran terhadap topik - paling cepat, tapi paling untung-untungan.'
+						: info === 'clue'
+							? 'Siswa lihat pertanyaan + petunjuk singkat dari field "clue" di bank soal; blok kodenya baru muncul di fase menjawab. Soal yang belum punya clue tetap jalan, cuma tanpa petunjuk.'
+							: 'Siswa lihat soal & blok kode lengkap, hanya pilihan jawabannya yang ditahan.'
 			}
 			el('optMode').addEventListener('change', renderModeHint)
+			el('optBetInfo').addEventListener('change', renderModeHint)
 			renderModeHint()
 
 			// Tampilkan/sembunyikan panel "Jumlah tim" + tombol kocok ulang cuma
@@ -409,6 +434,7 @@
 					}
 					el('optBank').value = m.options.bank
 					el('optMode').value = m.options.mode || 'classic'
+					el('optBetInfo').value = m.options.betInfo || 'full'
 					renderModeHint()
 					el('optCount').max = m.available
 					el('optTeam').checked = !!m.options.teamMode
@@ -440,10 +466,15 @@
 					el('gFlip').classList.remove('is-flipped')
 					el('gType').textContent = m.typeLabel
 					el('gPos').textContent = 'Kartu ' + (m.index + 1) + ' / ' + m.total
-					el('gPrompt').textContent = m.prompt
-					el('gCode').innerHTML = highlight(m.code, m.lang)
 
 					const betStage = m.stage === 'bet'
+					// Di fase taruhan, sebagian isi soal bisa sengaja ditahan (setelan
+					// "Info saat taruhan"), jadi prompt/code mungkin tidak dikirim
+					// sama sekali - jangan sampai proyektor menampilkan "undefined".
+					el('gPrompt').textContent =
+						m.prompt || (betStage ? 'Soal belum ditampilkan ke siswa' : '')
+					el('gCode').innerHTML = m.code ? highlight(m.code, m.lang) : ''
+					el('gCode').classList.toggle('hidden', !m.code)
 					el('gStage').classList.toggle('hidden', !betStage)
 					el('gStage').textContent = 'Fase taruhan'
 					if (betStage) {
@@ -451,6 +482,11 @@
 						// server belum mengirimnya, dan kalau ditampilkan, taruhan jadi
 						// tidak ada gunanya karena siswa bisa mengintip layar guru.
 						el('gOpts').innerHTML =
+							(m.clue
+								? '<p class="muted m-0">Petunjuk yang dilihat siswa: ' +
+									escapeHtml(m.clue) +
+									'</p>'
+								: '') +
 							'<p class="muted m-0">Siswa sedang memasang taruhan (50 / 100 / 200 poin). Pilihan jawaban muncul setelah waktu taruhan habis.</p>'
 						el('btnReveal').classList.add('hidden')
 						el('btnNext').classList.add('hidden')
