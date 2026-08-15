@@ -62,6 +62,19 @@
 				</div>
 				<div class="timer mb-6" id="pTimer"><i></i></div>
 
+				<!-- Fase pasang poin (Mode Pasang Poin) - tampil SEBELUM kartu
+				     soal dibuka. Siswa memasang poin berdasarkan clue singkat. -->
+				<div id="betCard" class="card stack text-center hidden">
+					<span class="pill pill-orange mx-auto">Pasang Poin</span>
+					<h2 id="betClue" class="text-lg">-</h2>
+					<p class="muted m-0 text-small">
+						Pasang poin dulu berdasarkan clue di atas. Benar: +poin
+						pasangan, salah: -poin pasangan.
+					</p>
+					<div class="opts" id="betOpts"></div>
+					<p id="betHint" class="muted hint text-center hidden"></p>
+				</div>
+
 				<div class="flip" id="pFlip">
 					<div class="flip-inner" id="pInner">
 						<div class="flip-face stack" id="pFront">
@@ -133,6 +146,10 @@
 			let current = null
 			let lastTick = 0
 			let myPid = localStorage.getItem('bb_pid') || null
+			// State Mode Pasang Poin: pasangan terakhir yang terkonfirmasi server
+			// (myBet) & kunci tombol saat waktu pasang habis (betLocked).
+			let myBet = null
+			let betLocked = false
 
 			// Suara saat jawaban dibuka: benar -> true.mp3, salah/tidak menjawab
 			// -> false.mp3. File-nya ditaruh di public/sounds/ (lihat README di
@@ -239,6 +256,20 @@
 					'Jawaban tersimpan: ' + LETTERS[i] + '. Masih bisa diganti sebelum waktu habis.'
 			}
 
+			// Pasang/ganti poin di fase betting. Server membolehkannya berkali-
+			// kali selama fase masih 'betting'; tanda pilihan terpilih diisi
+			// ulang lewat pesan 'betAck' supaya yang tampil = yang tersimpan.
+			function placeBet(amount) {
+				if (betLocked) return
+				unlockAudio()
+				sock.send({ t: 'player:bet', bet: amount })
+				el('betHint').classList.remove('hidden')
+				el('betHint').textContent =
+					amount > 0
+						? 'Kamu memasang ' + amount + ' poin. Masih bisa diganti sebelum waktu habis.'
+						: 'Kamu memilih lewati (0 poin) untuk soal ini.'
+			}
+
 			document.addEventListener('keydown', (e) => {
 				if (el('game').classList.contains('hidden') || !current) return
 				const k = e.key.toUpperCase()
@@ -265,16 +296,87 @@
 					if (m.phase === 'lobby' || m.phase === 'reveal') show('wait')
 				} else if (m.t === 'lobby') {
 					show('wait')
+				} else if (m.t === 'bet') {
+					// Fase pasang poin (Mode Pasang Poin): tampilkan clue + tombol
+					// 25/50/100/Lewati. Kartu soal sengaja belum dibuka sampai fase
+					// ini selesai (server mengirim 'card' setelahnya).
+					current = null
+					myBet = null
+					betLocked = false
+					lastTick = 0
+					show('game')
+					el('betCard').classList.remove('hidden')
+					el('pFlip').classList.add('hidden')
+					el('pType').textContent = 'Pasang Poin'
+					el('pPos').textContent = m.index + 1 + ' / ' + m.total
+					el('betClue').textContent = m.clue
+					el('betHint').classList.add('hidden')
+					el('betOpts').innerHTML =
+						m.choices
+							.map(
+								(v) =>
+									'<button class="opt" data-bet="' +
+									v +
+									'"><span class="key">' +
+									v +
+									'</span><span class="txt">poin</span></button>',
+							)
+							.join('') +
+						'<button class="opt" data-bet="0"><span class="key">0</span><span class="txt">Lewati saja</span></button>'
+					for (const b of el('betOpts').children)
+						b.onclick = () => placeBet(Number(b.dataset.bet))
+
+					stopTimer?.()
+					stopTimer = startTimer(m.timeLimit, {
+						onTick: (left, frac) => {
+							const t = el('pTimer')
+							t.firstElementChild.style.width = frac * 100 + '%'
+							t.className =
+								'timer' + (frac < 0.2 ? ' danger' : frac < 0.5 ? ' warn' : '')
+							// Bunyi "tuk" sekali per detik di 5 detik terakhir -
+							// lastTick mencegah bunyi dobel karena onTick dipanggil
+							// tiap 100ms, bukan tiap detik.
+							const s = Math.ceil(left)
+							if (s <= 5 && s > 0 && s !== lastTick) {
+								lastTick = s
+								sfxTick()
+							}
+						},
+						onDone: () => {
+							betLocked = true
+							for (const b of el('betOpts').children) b.disabled = true
+							el('betHint').classList.remove('hidden')
+							el('betHint').textContent = 'Waktu memasang poin habis.'
+						},
+					})
+				} else if (m.t === 'betAck') {
+					// Konfirmasi pasangan yang tersimpan di server - juga dipakai
+					// untuk menyinkronkan ulang tampilan saat reconnect di tengah
+					// fase betting maupun question.
+					myBet = m.bet
+					if (!el('betCard').classList.contains('hidden')) {
+						for (const b of el('betOpts').children)
+							b.classList.toggle('is-picked', Number(b.dataset.bet) === m.bet)
+					}
 				} else if (m.t === 'card') {
 					current = Object.assign({}, m, { locked: false })
 					lastTick = 0
+					betLocked = true
 					show('game')
+					el('betCard').classList.add('hidden')
+					el('pFlip').classList.remove('hidden')
 					el('pFlip').classList.remove('is-flipped')
 					el('pType').textContent = m.typeLabel
 					el('pPos').textContent = m.index + 1 + ' / ' + m.total
 					el('pPrompt').textContent = m.prompt
 					el('pCode').innerHTML = highlight(m.code, m.lang)
-					el('pHint').textContent = 'Makin cepat menjawab, makin besar poinnya.'
+					// Di Mode Pasang Poin, hint mengingatkan konsekuensi pasangan
+					// (bukan bonus kecepatan, karena bonus itu tidak dipakai).
+					el('pHint').textContent = m.betMode
+						? myBet
+							? 'Pasanganmu ' + myBet + ' poin - benar +' + myBet + ', salah -' + myBet + '.'
+							: 'Kamu tidak memasang poin untuk soal ini.'
+						: 'Makin cepat menjawab, makin besar poinnya.'
 					el('pOpts').innerHTML = optionButtonsHtml(m.options, {
 						tag: 'button',
 						selectable: true,
@@ -347,8 +449,24 @@
 						: m.correct
 							? 'Benar!'
 							: 'Belum tepat'
-					el('pPoints').textContent = '+' + m.points
-					if (m.answered && m.correct && m.breakdown) {
+					// Di Mode Pasang Poin poin bisa negatif (pasangan hangus), jadi
+					// tanda +/- dirakit dari nilainya, bukan selalu diawali '+'.
+					el('pPoints').textContent = (m.points > 0 ? '+' : '') + m.points
+					if (m.breakdown && typeof m.breakdown.bet === 'number') {
+						// Rincian khusus Mode Pasang Poin: berapa yang dipasang &
+						// apakah pasangan itu menang atau hangus.
+						el('pBreakdown').classList.remove('hidden')
+						el('pBreakdown').innerHTML =
+							'<div class="row between text-small"><span class="muted">Poin dipasang</span><strong>' +
+							m.breakdown.bet +
+							'</strong></div>' +
+							'<div class="row between text-small"><span class="muted">' +
+							(m.correct ? 'Jawaban benar' : 'Jawaban kurang tepat') +
+							'</span><strong>' +
+							(m.correct ? '+' : '-') +
+							m.breakdown.bet +
+							'</strong></div>'
+					} else if (m.answered && m.correct && m.breakdown) {
 						const secs = ((m.ms || 0) / 1000).toFixed(1)
 						el('pBreakdown').classList.remove('hidden')
 						el('pBreakdown').innerHTML =
